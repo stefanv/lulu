@@ -29,17 +29,20 @@ cdef class ConnectedRegion:
 
     """
     cdef int value
-    cdef int start_row
+    cdef int _start_row
     cdef list rowptr, colptr
     cdef int _nnz
     cdef tuple _shape
 
-    def __init__(self, shape=None, value=0, start_row=0, rowptr=[], colptr=[]):
+    def __init__(self, shape, value=0, start_row=0, rowptr=[], colptr=[]):
+        if shape is None:
+            raise ValueError("Shape must be specified.")
+
         self._shape = shape
         self.value = value
-        self.start_row = start_row
         self.rowptr = rowptr
         self.colptr = colptr
+        self.start_row = start_row
 
     @cython.boundscheck(True)
     def todense(self):
@@ -98,3 +101,18 @@ cdef class ConnectedRegion:
         return ConnectedRegion(shape=self._shape, value=self.value,
                                start_row=self.start_row,
                                rowptr=self.rowptr, colptr=self.colptr)
+
+    def set_start_row(self, start_row):
+        """Set the first row where values occur.
+
+        """
+        if start_row <= (self._shape[0] - len(self.rowptr) + 1):
+            self._start_row = start_row
+        else:
+            raise ValueError("Start row is too large for the current "
+                             "shape.  Reshape the connectedregion first.")
+
+    def get_start_row(self):
+        return self._start_row
+
+    start_row = property(fset=set_start_row, fget=get_start_row)

@@ -3,9 +3,6 @@ import numpy as np
 
 import lulu.lulu_base as base
 
-def test_create():
-    c = base.ConnectedRegion()
-
 class TestToDense:
     c = base.ConnectedRegion(shape=(5,5),
                              value=1, start_row=1,
@@ -29,3 +26,14 @@ class TestToDense:
 
     def test_nnz(self):
         assert_equal(self.c.nnz, 7)
+
+    def test_start_row(self):
+        c = base.ConnectedRegion(shape=(2,2),
+                                 value=1, start_row=0,
+                                 rowptr=[0,2],
+                                 colptr=[0,1])
+        assert_array_equal(c.todense(), [[1, 0],
+                                         [0, 0]])
+        c.start_row = 0
+        c.start_row = 1
+        assert_raises(ValueError, c.set_start_row, 2)
