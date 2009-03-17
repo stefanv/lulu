@@ -7,5 +7,5 @@ clean:
 	rm *.so *.c
 
 test:
-	nosetests
+	nosetests -v
 
