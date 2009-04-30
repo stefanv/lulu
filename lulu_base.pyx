@@ -10,7 +10,7 @@ import copy
 
 cdef class ConnectedRegion:
     """
-    A connected region is stored in a modified Compressed
+    A 4-connected region is stored in a modified Compressed
     Sparse Row matrix format.
 
     Since the region is connected, we only have to store one value.
@@ -44,6 +44,24 @@ cdef class ConnectedRegion:
         self.colptr = colptr
         self.start_row = start_row
 
+    def _iterate_rows(self):
+        """For each row, return the connected columns as
+
+        (r, start, end)
+        """
+        cdef list out = []
+        cdef int r, rp, c
+
+        for r, rp in enumerate(range(len(self.rowptr) - 1)):
+            for c in range((self.rowptr[rp + 1] - self.rowptr[rp]) / 2):
+                start = self.colptr[self.rowptr[rp] + 2*c]
+                end = self.colptr[self.rowptr[rp] + 2*c + 1]
+
+                # Cython does not yet support "yield"
+                out.append((r, start, end))
+
+        return out
+
     @cython.boundscheck(True)
     def todense(self):
         """Convert the connected region to a dense array.
@@ -72,6 +90,7 @@ cdef class ConnectedRegion:
 
         """
         cdef int nnz = 0
+        cdef int i
 
         for i in range(len(self.colptr) / 2):
             nnz += self.colptr[2*i + 1] - self.colptr[2*i]
@@ -116,3 +135,30 @@ cdef class ConnectedRegion:
         return self._start_row
 
     start_row = property(fset=set_start_row, fget=get_start_row)
+
+    def inside_boundary(self):
+        """Return the indices for the inside boundary.
+
+        """
+        cdef int r, rp, c, start, end
+        cdef list x = [], y = []
+
+        for r, start, end in self._iterate_rows():
+            x.append(start)
+            y.append(r + self.start_row)
+
+            end -= 1
+            if end != start:
+                x.append(end)
+                y.append(r + self.start_row)
+
+        return x, y
+
+    def outside_boundary(self):
+        pass
+
+    def __add__(self, a):
+        """Merge two regions.
+
+        """
+        raise NotImplementedError

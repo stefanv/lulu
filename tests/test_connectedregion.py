@@ -7,12 +7,12 @@ class TestToDense:
     c = base.ConnectedRegion(shape=(5,5),
                              value=1, start_row=1,
                              rowptr=[0,4,6,8],
-                             colptr=[2,3,4,5,0,3,3,5])
+                             colptr=[2,3,4,5,0,3,2,5])
 
     dense = np.array([[0, 0, 0, 0, 0],
                       [0, 0, 1, 0, 1],
                       [1, 1, 1, 0, 0],
-                      [0, 0, 0, 1, 1],
+                      [0, 0, 1, 1, 1],
                       [0, 0, 0, 0, 0]])
 
     def test_basic(self):
@@ -25,7 +25,7 @@ class TestToDense:
         assert_array_equal(d.todense(), self.dense[:4, :])
 
     def test_nnz(self):
-        assert_equal(self.c.nnz, 7)
+        assert_equal(self.c.nnz, 8)
 
     def test_start_row(self):
         c = base.ConnectedRegion(shape=(2,2),
@@ -37,3 +37,8 @@ class TestToDense:
         c.start_row = 0
         c.start_row = 1
         assert_raises(ValueError, c.set_start_row, 2)
+
+    def test_inside_boundary(self):
+        x, y = self.c.inside_boundary()
+        assert_array_equal(x, [2, 4, 0, 2, 2, 4])
+        assert_array_equal(y, [1, 1, 2, 2, 3, 3])
