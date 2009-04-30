@@ -47,18 +47,21 @@ cdef class ConnectedRegion:
     def _iterate_rows(self):
         """For each row, return the connected columns as
 
-        (r, start, end)
+        (row, start, end)
+
+        Note that this row includes the row offset.
+
         """
         cdef list out = []
-        cdef int r, rp, c
+        cdef int r, c, start, end
 
-        for r, rp in enumerate(range(len(self.rowptr) - 1)):
-            for c in range((self.rowptr[rp + 1] - self.rowptr[rp]) / 2):
-                start = self.colptr[self.rowptr[rp] + 2*c]
-                end = self.colptr[self.rowptr[rp] + 2*c + 1]
+        for r in range(len(self.rowptr) - 1):
+            for c in range((self.rowptr[r + 1] - self.rowptr[r]) / 2):
+                start = self.colptr[self.rowptr[r] + 2*c]
+                end = self.colptr[self.rowptr[r] + 2*c + 1]
 
                 # Cython does not yet support "yield"
-                out.append((r, start, end))
+                out.append((r + self.start_row, start, end))
 
         return out
 
@@ -73,14 +76,11 @@ cdef class ConnectedRegion:
 
         cdef np.ndarray[np.int_t, ndim=2] out = np.zeros(shape, dtype=np.int)
 
-        cdef int i, j, k, start, end
+        cdef int row, start, end
 
-        for i in range(len(self.rowptr) - 1):
-            for j in range((self.rowptr[i + 1] - self.rowptr[i]) / 2):
-                start = self.colptr[self.rowptr[i] + 2*j]
-                end = self.colptr[self.rowptr[i] + 2*j + 1]
-                for k in range(start, end):
-                    out[i + self.start_row, k] = self.value
+        for row, start, end in self._iterate_rows():
+            for k in range(start, end):
+                out[row, k] = self.value
 
         return out
 
@@ -140,17 +140,17 @@ cdef class ConnectedRegion:
         """Return the indices for the inside boundary.
 
         """
-        cdef int r, rp, c, start, end
+        cdef int row, start, end
         cdef list x = [], y = []
 
-        for r, start, end in self._iterate_rows():
+        for row, start, end in self._iterate_rows():
             x.append(start)
-            y.append(r + self.start_row)
+            y.append(row)
 
             end -= 1
             if end != start:
                 x.append(end)
-                y.append(r + self.start_row)
+                y.append(row)
 
         return x, y
 
