@@ -97,6 +97,11 @@ cdef class ConnectedRegion:
 
         return nnz
 
+    def get_shape(self):
+        return self._shape
+
+    shape = property(fget=get_shape, fset=reshape)
+
     def _minimum_shape(self):
         """Return the minimum shape into which the connected region can fit.
 
@@ -135,6 +140,29 @@ cdef class ConnectedRegion:
         return self._start_row
 
     start_row = property(fset=set_start_row, fget=get_start_row)
+
+    def contains(self, int r, int c):
+        """Does the connected region contain and element at (r, c)?
+
+        """
+        cdef i
+
+        r -= self.start_row
+
+        rows = len(self.rowptr)
+
+        if r < 0 or r > rows - 2:
+            return False
+
+        if c < 0 or c >= self._shape[1]:
+            return False
+
+        for i in range((self.rowptr[r + 1] - self.rowptr[r]) / 2):
+            if (c >= self.colptr[self.rowptr[r] + 2*i]) and \
+               (c < self.colptr[self.rowptr[r] + 2*i + 1]):
+                return True
+
+        return False
 
     def inside_boundary(self):
         """Return the indices for the inside boundary.

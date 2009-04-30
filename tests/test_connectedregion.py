@@ -42,3 +42,9 @@ class TestToDense:
         x, y = self.c.inside_boundary()
         assert_array_equal(x, [2, 4, 0, 2, 2, 4])
         assert_array_equal(y, [1, 1, 2, 2, 3, 3])
+
+    def test_contains(self):
+        d = self.c.todense()
+        for y, x in np.ndindex(self.c.shape):
+            self.c.contains(y, x) == d[y, x]
+
