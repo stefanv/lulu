@@ -121,12 +121,14 @@ cdef class ConnectedRegion:
         """
         return (self.start_row + len(self.rowptr) - 1, max(self.colptr))
 
-    def reshape(self, shape):
+    def reshape(self, shape=None):
         """Set the shape of the connected region.
 
         Useful when converting to dense.
         """
-        if (shape >= self._minimum_shape()):
+        if shape is None:
+            self._shape = self._minimum_shape()
+        elif (shape >= self._minimum_shape()):
             self._shape = shape
         else:
             raise ValueError("Minimum shape is %s." % self._minimum_shape())

@@ -29,8 +29,12 @@ class TestConnectedRegion:
 
     def test_reshape(self):
         d = self.c.copy()
-        d.reshape((4,5))
+        d.reshape((4, 5))
         assert_array_equal(d.todense(), self.dense[:4, :])
+
+        d.reshape((5, 5))
+        d.reshape()
+        assert_array_equal(d.shape, (4, 5))
 
     def test_nnz(self):
         assert_equal(self.c.nnz, 8)
