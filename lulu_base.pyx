@@ -4,6 +4,7 @@ import numpy as np
 # about the numpy module (this is stored in a file numpy.pxd which is
 # currently part of the Cython distribution).
 cimport numpy as np
+cimport stdlib
 
 import cython
 import copy
@@ -165,7 +166,14 @@ cdef class ConnectedRegion:
         return False
 
     def inside_boundary(self):
-        """Return the indices for the inside boundary.
+        """Calculate the inside boundary.
+
+        Returns
+        -------
+        r : list of int, length N
+            Row positions.
+        c : list of int, length N
+            Column positions.
 
         """
         cdef int row, start, end
@@ -180,10 +188,95 @@ cdef class ConnectedRegion:
                 x.append(end)
                 y.append(row)
 
-        return x, y
+        return y, x
 
     def outside_boundary(self):
-        pass
+        """Calculate the outside boundary using a scanline approach.
+
+        Notes
+        -----
+        A scanline is constructed that is as wide as the region.  The
+        scanline moves down the image from the top.  For each position
+        in the scanline, if
+
+        - the pixel above or below is part of the region
+        - and the pixel at the current position is not
+
+        then assign this position as part of the outside boundary.
+
+        The advantage of this approach is that we are guaranteed the
+        boundary positions ordered from top left to bottom right,
+        which will be useful later when we join two regions together.
+
+        Theoretically, an interval tree should be more efficient to
+        determine the overlap between connected intervals, but the
+        data structures and allocations required are more complex.  We
+        shall have to benchmark both to know for sure.
+
+        As an optimisation, we evaluate only points next to inside
+        boundary positions.
+
+        """
+        cdef int i # scanline row-position
+        cdef int j # column position in scanline
+        cdef int start, end, k
+        cdef list x = [], y = []
+
+        cdef int columns = self._shape[1]
+        cdef int rows = len(self.rowptr) - 1
+
+        cdef int scanline_size = sizeof(int) * columns
+        cdef int* line_above = <int*>stdlib.malloc(scanline_size)
+        cdef int* line = <int*>stdlib.malloc(scanline_size)
+        cdef int* line_below = <int*>stdlib.malloc(scanline_size)
+
+        for j in range(columns):
+            line[j] = 0
+            line_below[j] = 0
+
+        for i in range(rows + 2):
+            # Update scanline and line above scanline
+            for j in range(columns):
+                line_above[j] = line[j]
+                line[j] = line_below[j]
+
+            # When the scanline reaches the last line,
+            # fill line_below with zeros
+            if i <= rows:
+                for j in range(columns):
+                    line_below[j] = 0
+
+            # Update line below scanline
+            if i < rows:
+                for j in range((self.rowptr[i + 1] - self.rowptr[i]) / 2):
+                    start = self.colptr[self.rowptr[i] + 2*j]
+                    end = self.colptr[self.rowptr[i] + 2*j + 1]
+
+                    for k in range(start, end):
+                        line_below[k] = 1
+
+            for j in range(columns):
+                # Test four neighbours for connections
+                if j == 0 and line[j] == 1:
+                    x.append(-1)
+                    y.append(i - 1 + self.start_row)
+
+                if (line[j] == 0) and \
+                   (line_above[j] == 1 or line_below[j] == 1 or
+                    ((j - 1) >= 0 and line[j - 1] == 1) or \
+                    ((j + 1) < columns and line[j + 1] == 1)):
+                    x.append(j)
+                    y.append(i - 1 + self.start_row)
+
+                if j == columns - 1 and line[j] == 1:
+                    x.append(columns)
+                    y.append(i - 1 + self.start_row)
+
+        stdlib.free(line_above)
+        stdlib.free(line)
+        stdlib.free(line_below)
+
+        return y, x
 
     def __add__(self, a):
         """Merge two regions.

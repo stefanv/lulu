@@ -3,7 +3,7 @@ import numpy as np
 
 import lulu.lulu_base as base
 
-class TestToDense:
+class TestConnectedRegion:
     c = base.ConnectedRegion(shape=(5,5),
                              value=1, start_row=1,
                              rowptr=[0,4,6,8],
@@ -39,12 +39,27 @@ class TestToDense:
         assert_raises(ValueError, c.set_start_row, 2)
 
     def test_inside_boundary(self):
-        x, y = self.c.inside_boundary()
-        assert_array_equal(x, [2, 4, 0, 2, 2, 4])
+        y, x = self.c.inside_boundary()
         assert_array_equal(y, [1, 1, 2, 2, 3, 3])
+        assert_array_equal(x, [2, 4, 0, 2, 2, 4])
 
     def test_contains(self):
         d = self.c.todense()
         for y, x in np.ndindex(self.c.shape):
             self.c.contains(y, x) == d[y, x]
 
+    def test_outside_boundary(self):
+        y, x = self.c.outside_boundary()
+        assert_array_equal(x, [2, 4, 0, 1, 3, 5, -1, 3, 4, 0, 1, 5, 2, 3, 4])
+        assert_array_equal(y, [0, 0, 1, 1, 1, 1, 2, 2, 2, 3, 3, 3, 4, 4, 4])
+
+    def test_outside_boundary_beyond_border(self):
+        c = base.ConnectedRegion(shape=(2, 2),
+                                 value=1,
+                                 rowptr=[0, 2, 4],
+                                 colptr=[0, 1, 1, 2])
+        assert_array_equal(c.todense(), np.eye(2))
+
+        y, x = c.outside_boundary()
+        assert_array_equal(y, [-1, 0, 0, 1, 1, 2])
+        assert_array_equal(x, [0, -1, 1, 0, 2, 1])
