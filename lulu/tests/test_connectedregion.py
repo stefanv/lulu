@@ -5,9 +5,9 @@ from lulu.connected_region import ConnectedRegion
 
 class TestConnectedRegion:
     c = ConnectedRegion(shape=(5,5),
-                             value=1, start_row=1,
-                             rowptr=[0,4,6,8],
-                             colptr=[2,3,4,5,0,3,2,5])
+                        value=1, start_row=1,
+                        rowptr=[0,4,6,8],
+                        colptr=[2,3,4,5,0,3,2,5])
 
     dense = np.array([[0, 0, 0, 0, 0],
                       [0, 0, 1, 0, 1],
@@ -18,6 +18,14 @@ class TestConnectedRegion:
     def test_basic(self):
         assert_array_equal(self.c.todense(), self.dense)
         assert_array_equal(self.c.copy().todense(), self.dense)
+
+    def test_copy(self):
+        x = [0, 1]
+        c = ConnectedRegion(shape=(1,1), value=1, rowptr=[0, 2], colptr=x)
+        d = c.copy()
+        x[1] = 0
+
+        assert d.todense() != c.todense()
 
     def test_reshape(self):
         d = self.c.copy()

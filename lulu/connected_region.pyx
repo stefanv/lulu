@@ -29,20 +29,30 @@ cdef class ConnectedRegion:
         regions (see description above).
 
     """
-    cdef int value
+    cdef int _value
     cdef int _start_row
     cdef list rowptr, colptr
     cdef int _nnz
     cdef tuple _shape
 
-    def __init__(self, shape, value=0, start_row=0, rowptr=[], colptr=[]):
+    def __init__(self, shape, int value=0, int start_row=0,
+                 rowptr=None, colptr=None):
         if shape is None:
             raise ValueError("Shape must be specified.")
 
         self._shape = shape
-        self.value = value
-        self.rowptr = rowptr
-        self.colptr = colptr
+        self._value = value
+
+        if rowptr is None:
+            self.rowptr = []
+        else:
+            self.rowptr = rowptr
+
+        if colptr is None:
+            self.colptr = []
+        else:
+            self.colptr = colptr
+
         self.start_row = start_row
 
     def _iterate_rows(self):
@@ -125,7 +135,8 @@ cdef class ConnectedRegion:
         """
         return ConnectedRegion(shape=self._shape, value=self.value,
                                start_row=self.start_row,
-                               rowptr=self.rowptr, colptr=self.colptr)
+                               rowptr=list(self.rowptr),
+                               colptr=list(self.colptr))
 
     def set_start_row(self, start_row):
         """Set the first row where values occur.
