@@ -81,6 +81,8 @@ cdef class ConnectedRegion:
         """Convert the connected region to a dense array.
 
         """
+        self.validate()
+
         shape = self._shape
         if shape is None:
             shape = self._minimum_shape()
@@ -294,3 +296,13 @@ cdef class ConnectedRegion:
 
         """
         raise NotImplementedError
+
+    def validate(self):
+        if self.rowptr[-1] != len(self.colptr):
+            raise RuntimeError("ConnectedRegion was not finalised.  Ensure "
+                               "rowptr[-1] points beyond last entry of "
+                               "colptr.")
+
+        if len(self.colptr) % 2 != 0:
+            raise RuntimeError("Colptr must have 2xN entries.")
+
