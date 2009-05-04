@@ -299,6 +299,14 @@ cdef class ConnectedRegion:
         """
         raise NotImplementedError
 
+    def set_value(self, v):
+        self._value = v
+
+    def get_value(self):
+        return self._value
+
+    value = property(fset=set_value, fget=get_value)
+
     def validate(self):
         if self.rowptr[-1] != len(self.colptr):
             raise RuntimeError("ConnectedRegion was not finalised.  Ensure "

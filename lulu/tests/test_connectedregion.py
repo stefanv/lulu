@@ -70,3 +70,12 @@ class TestConnectedRegion:
         y, x = c.outside_boundary()
         assert_array_equal(y, [-1, 0, 0, 1, 1, 2])
         assert_array_equal(x, [0, -1, 1, 0, 2, 1])
+
+    def test_value(self):
+        c = ConnectedRegion(shape=(2, 2))
+        assert_equal(c.value, 0)
+        c.value = 5
+        assert_equal(c.value, 5)
+        c.set_value(0)
+        assert_equal(c.value, 0)
+
