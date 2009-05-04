@@ -60,6 +60,13 @@ class TestConnectedRegion:
         assert_array_equal(x, [2, 4, 0, 1, 3, 5, -1, 3, 4, 0, 1, 5, 2, 3, 4])
         assert_array_equal(y, [0, 0, 1, 1, 1, 1, 2, 2, 2, 3, 3, 3, 4, 4, 4])
 
+        c = ConnectedRegion(shape=(1, 5),
+                            rowptr=[0, 2],
+                            colptr=[2, 3])
+        y, x = c.outside_boundary()
+        assert_array_equal(x, [2, 1, 3, 2])
+        assert_array_equal(y, [-1, 0, 0, 1])
+
     def test_outside_boundary_beyond_border(self):
         c = ConnectedRegion(shape=(2, 2),
                             value=1,

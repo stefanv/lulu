@@ -212,8 +212,11 @@ cdef class ConnectedRegion:
         cdef int start, end, k
         cdef list x = [], y = []
 
-        cdef int columns = self._shape[1]
         cdef int rows = len(self.rowptr) - 1
+
+        cdef int col_min = min(self.colptr)
+        cdef int col_max = max(self.colptr)
+        cdef int columns = col_max - col_min
 
         cdef int scanline_size = sizeof(int) * columns
         cdef int* line_above = <int*>stdlib.malloc(scanline_size)
@@ -242,24 +245,24 @@ cdef class ConnectedRegion:
                     start = self.colptr[self.rowptr[i] + 2*j]
                     end = self.colptr[self.rowptr[i] + 2*j + 1]
 
-                    for k in range(start, end):
+                    for k in range(start - col_min, end - col_min):
                         line_below[k] = 1
 
             for j in range(columns):
                 # Test four neighbours for connections
                 if j == 0 and line[j] == 1:
-                    x.append(-1)
+                    x.append(-1 + col_min)
                     y.append(i - 1 + self.start_row)
 
                 if (line[j] == 0) and \
                    (line_above[j] == 1 or line_below[j] == 1 or
                     ((j - 1) >= 0 and line[j - 1] == 1) or \
                     ((j + 1) < columns and line[j + 1] == 1)):
-                    x.append(j)
+                    x.append(j + col_min)
                     y.append(i - 1 + self.start_row)
 
                 if j == columns - 1 and line[j] == 1:
-                    x.append(columns)
+                    x.append(columns + col_min)
                     y.append(i - 1 + self.start_row)
 
         stdlib.free(line_above)
