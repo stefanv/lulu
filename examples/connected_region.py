@@ -1,12 +1,12 @@
 import numpy as np
 import matplotlib.pyplot as plt
 
-import lulu.lulu_base as base
+from lulu.connected_region import ConnectedRegion
 
-c = base.ConnectedRegion(shape=(5,5),
-                         value=1, start_row=1,
-                         rowptr=[0,4,6,10,14],
-                         colptr=[2,3,4,5,0,5,0,1,2,5,0,2,3,5])
+c = ConnectedRegion(shape=(5,5),
+                    value=1, start_row=1,
+                    rowptr=[0,4,6,10,14],
+                    colptr=[2,3,4,5,0,5,0,1,2,5,0,2,3,5])
 
 print c.todense()
 
