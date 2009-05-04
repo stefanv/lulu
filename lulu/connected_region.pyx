@@ -316,3 +316,20 @@ cdef class ConnectedRegion:
         if len(self.colptr) % 2 != 0:
             raise RuntimeError("Colptr must have 2xN entries.")
 
+    # These methods are needed by the lulu decomposition to build
+    # connected regions incrementally
+
+    def _new_row(self):
+        cdef int L = len(self.colptr)
+
+        if not self.rowptr[-1] == L:
+            self.rowptr.append(L)
+
+    def _append_colptr(self, int a, int b):
+        self.colptr.append(a)
+        self.colptr.append(b)
+
+    @property
+    def _current_row(self):
+        return len(self.rowptr) + self.start_row - 1
+

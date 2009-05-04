@@ -8,5 +8,6 @@ def cext(name):
                      include_dirs=[numpy.get_include()])
 
 setup(cmdclass = {'build_ext': build_ext},
-      ext_modules = [cext('connected_region'), cext('ccomp')])
-
+      ext_modules = [cext('connected_region'),
+                     cext('ccomp'),
+                     cext('base')])

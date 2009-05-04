@@ -79,3 +79,18 @@ class TestConnectedRegion:
         c.set_value(0)
         assert_equal(c.value, 0)
 
+    def test_internal_build_ops(self):
+        c = ConnectedRegion(shape=(2, 2), rowptr=[0])
+        assert_equal(c._current_row, 0)
+
+        c._append_colptr(0, 1)
+
+        c._new_row()
+        assert_equal(c._current_row, 1)
+
+        c._append_colptr(1, 2)
+        c._new_row()
+
+        c.set_value(5)
+
+        assert_array_equal(c.todense(), [[5, 0], [0, 5]])
