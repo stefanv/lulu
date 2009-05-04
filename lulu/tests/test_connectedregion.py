@@ -38,11 +38,6 @@ class TestConnectedRegion:
         c.start_row = 1
         assert_raises(ValueError, c.set_start_row, 2)
 
-    def test_inside_boundary(self):
-        y, x = self.c.inside_boundary()
-        assert_array_equal(y, [1, 1, 2, 2, 3, 3])
-        assert_array_equal(x, [2, 4, 0, 2, 2, 4])
-
     def test_contains(self):
         d = self.c.todense()
         for y, x in np.ndindex(self.c.shape):
