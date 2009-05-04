@@ -180,31 +180,6 @@ cdef class ConnectedRegion:
 
         return False
 
-    def inside_boundary(self):
-        """Calculate the inside boundary.
-
-        Returns
-        -------
-        r : list of int, length N
-            Row positions.
-        c : list of int, length N
-            Column positions.
-
-        """
-        cdef int row, start, end
-        cdef list x = [], y = []
-
-        for row, start, end in self._iterate_rows():
-            x.append(start)
-            y.append(row)
-
-            end -= 1
-            if end != start:
-                x.append(end)
-                y.append(row)
-
-        return y, x
-
     def outside_boundary(self):
         """Calculate the outside boundary using a scanline approach.
 
