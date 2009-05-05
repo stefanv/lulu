@@ -29,14 +29,11 @@ cdef class ConnectedRegion:
         regions (see description above).
 
     """
-    cdef int _value
-    cdef int _start_row
-    cdef list rowptr, colptr
-    cdef int _nnz
-    cdef tuple _shape
 
-    def __init__(self, shape, int value=0, int start_row=0,
-                 rowptr=None, colptr=None):
+    # all class variables and their types are defined in connected_region.pxd
+
+    def __init__(self, tuple shape, int value=0, int start_row=0,
+                 list rowptr=None, list colptr=None):
         if shape is None:
             raise ValueError("Shape must be specified.")
 
@@ -55,7 +52,7 @@ cdef class ConnectedRegion:
 
         self.start_row = start_row
 
-    def _iterate_rows(self):
+    cdef _iterate_rows(self):
         """For each row, return the connected columns as
 
         (row, start, end)
@@ -63,16 +60,18 @@ cdef class ConnectedRegion:
         Note that this row includes the row offset.
 
         """
+        cdef list rowptr = self.rowptr
+        cdef list colptr = self.colptr
+
         cdef list out = []
         cdef int r, c, start, end
-
-        for r in range(len(self.rowptr) - 1):
-            for c in range((self.rowptr[r + 1] - self.rowptr[r]) / 2):
-                start = self.colptr[self.rowptr[r] + 2*c]
-                end = self.colptr[self.rowptr[r] + 2*c + 1]
+        for r in range(len(rowptr) - 1):
+            for c in range((rowptr[r + 1] - rowptr[r]) / 2):
+                start = colptr[<int>rowptr[r] + 2*c]
+                end = colptr[<int>rowptr[r] + 2*c + 1]
 
                 # Cython does not yet support "yield"
-                out.append((r + self.start_row, start, end))
+                out.append((r + self._start_row, start, end))
 
         return out
 
@@ -93,12 +92,11 @@ cdef class ConnectedRegion:
 
         for row, start, end in self._iterate_rows():
             for k in range(start, end):
-                out[row, k] = self.value
+                out[row, k] = self._value
 
         return out
 
-    @property
-    def nnz(self):
+    cpdef int nnz(self):
         """Return the number of non-zero elements.
 
         """
@@ -110,18 +108,18 @@ cdef class ConnectedRegion:
 
         return nnz
 
-    def get_shape(self):
+    cpdef get_shape(self):
         return self._shape
 
     shape = property(fget=get_shape, fset=reshape)
 
-    def _minimum_shape(self):
+    cdef _minimum_shape(self):
         """Return the minimum shape into which the connected region can fit.
 
         """
         return (self.start_row + len(self.rowptr) - 1, max(self.colptr))
 
-    def reshape(self, shape=None):
+    cpdef reshape(self, shape=None):
         """Set the shape of the connected region.
 
         Useful when converting to dense.
@@ -133,16 +131,16 @@ cdef class ConnectedRegion:
         else:
             raise ValueError("Minimum shape is %s." % self._minimum_shape())
 
-    def copy(self):
+    cpdef ConnectedRegion copy(self):
         """Return a deep copy of the connected region.
 
         """
-        return ConnectedRegion(shape=self._shape, value=self.value,
-                               start_row=self.start_row,
+        return ConnectedRegion(shape=self._shape, value=self._value,
+                               start_row=self._start_row,
                                rowptr=list(self.rowptr),
                                colptr=list(self.colptr))
 
-    def set_start_row(self, start_row):
+    cpdef set_start_row(self, start_row):
         """Set the first row where values occur.
 
         """
@@ -152,12 +150,12 @@ cdef class ConnectedRegion:
             raise ValueError("Start row is too large for the current "
                              "shape.  Reshape the connectedregion first.")
 
-    def get_start_row(self):
+    cpdef int get_start_row(self):
         return self._start_row
 
     start_row = property(fset=set_start_row, fget=get_start_row)
 
-    def contains(self, int r, int c):
+    cpdef int contains(self, int r, int c):
         """Does the connected region contain and element at (r, c)?
 
         """
@@ -180,7 +178,7 @@ cdef class ConnectedRegion:
 
         return False
 
-    def outside_boundary(self):
+    cpdef outside_boundary(self):
         """Calculate the outside boundary using a scanline approach.
 
         Notes
@@ -277,15 +275,15 @@ cdef class ConnectedRegion:
         """
         raise NotImplementedError
 
-    def set_value(self, v):
+    cpdef set_value(self, int v):
         self._value = v
 
-    def get_value(self):
+    cpdef int get_value(self):
         return self._value
 
     value = property(fset=set_value, fget=get_value)
 
-    def validate(self):
+    cpdef validate(self):
         if self.rowptr[-1] != len(self.colptr):
             raise RuntimeError("ConnectedRegion was not finalised.  Ensure "
                                "rowptr[-1] points beyond last entry of "
@@ -297,17 +295,16 @@ cdef class ConnectedRegion:
     # These methods are needed by the lulu decomposition to build
     # connected regions incrementally
 
-    def _new_row(self):
+    cpdef _new_row(self):
         cdef int L = len(self.colptr)
 
         if not self.rowptr[-1] == L:
             self.rowptr.append(L)
 
-    def _append_colptr(self, int a, int b):
+    cpdef _append_colptr(self, int a, int b):
         self.colptr.append(a)
         self.colptr.append(b)
 
-    @property
-    def _current_row(self):
+    cpdef int _current_row(self):
         return len(self.rowptr) + self.start_row - 1
 
