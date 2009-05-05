@@ -3,12 +3,13 @@ __all__ = ['connected_regions']
 import numpy as np
 
 cimport numpy as np
+
 import cython
+from python_dict cimport PyDict_Next
+ctypedef void PyObject
 
 from lulu.ccomp import label
-
-from lulu.connected_region cimport ConnectedRegion as ConnectedRegionT
-from lulu.connected_region import ConnectedRegion
+from lulu.connected_region cimport ConnectedRegion
 
 def connected_regions(np.ndarray[np.int_t, ndim=2] img):
     """Return ConnectedRegions that, together, compose the whole image.
@@ -16,12 +17,13 @@ def connected_regions(np.ndarray[np.int_t, ndim=2] img):
     """
     cdef int rows = img.shape[0]
     cdef int columns = img.shape[1]
-    cdef ConnectedRegionT cr
+
+    cdef ConnectedRegion cr
 
     # perform initial labeling
     cdef np.ndarray[np.int_t, ndim=2] labels = label(img)
 
-    cdef list regions = []
+    cdef dict regions = {}
 
     # create the first level components
     cdef int r = 0, c = 0, connect_from, prev_label = 0, cur_label = 0
@@ -42,12 +44,11 @@ def connected_regions(np.ndarray[np.int_t, ndim=2] img):
 
                 # New region?
                 if prev_label > len(regions) - 1:
-                    regions.append(
-                        ConnectedRegion(shape=(rows, columns),
-                                        value=img[r, connect_from],
-                                        start_row=r,
-                                        rowptr=[0])
-                        )
+                    regions[prev_label] = ConnectedRegion(
+                        shape=(rows, columns),
+                        value=img[r, connect_from],
+                        start_row=r,
+                        rowptr=[0])
 
                 cur_region = regions[prev_label]
 
@@ -61,8 +62,7 @@ def connected_regions(np.ndarray[np.int_t, ndim=2] img):
                 connect_from = c
 
     # finalise rows
-    for cr in regions:
+    for cr in regions.itervalues():
         cr._new_row()
-        cr.reshape()
 
     return regions
