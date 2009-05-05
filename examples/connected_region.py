@@ -19,6 +19,8 @@ dense[1:6, 1:6, 0] = c.todense()
 plt.subplot(1, 2, 1)
 plt.imshow(dense, interpolation='nearest')
 plt.title('Connected region')
+plt.xticks([])
+plt.yticks([])
 
 ii, jj = c.outside_boundary()
 dense_outside = dense.copy()
@@ -28,5 +30,7 @@ for i, j in zip(ii, jj):
 plt.subplot(1, 2, 2)
 plt.imshow(dense_outside, interpolation='nearest')
 plt.title('Outside boundary')
+plt.xticks([])
+plt.yticks([])
 
 plt.show()
