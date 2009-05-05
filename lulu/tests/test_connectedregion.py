@@ -37,7 +37,7 @@ class TestConnectedRegion:
         assert_array_equal(d.shape, (4, 5))
 
     def test_nnz(self):
-        assert_equal(self.c.nnz, 8)
+        assert_equal(self.c.nnz(), 8)
 
     def test_start_row(self):
         c = ConnectedRegion(shape=(2,2),
@@ -88,12 +88,12 @@ class TestConnectedRegion:
 
     def test_internal_build_ops(self):
         c = ConnectedRegion(shape=(2, 2), rowptr=[0])
-        assert_equal(c._current_row, 0)
+        assert_equal(c._current_row(), 0)
 
         c._append_colptr(0, 1)
 
         c._new_row()
-        assert_equal(c._current_row, 1)
+        assert_equal(c._current_row(), 1)
 
         c._append_colptr(1, 2)
         c._new_row()

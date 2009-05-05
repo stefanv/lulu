@@ -6,10 +6,10 @@ import time
 
 import lulu
 
-print "Decomposing a (100, 100) matrix."
-
-N = 200
+N = 500
 runs = 3
+
+print "Decomposing a (%s, %s) matrix." % (N, N)
 
 x = np.random.randint(255, size=(N, N))
 times = []
