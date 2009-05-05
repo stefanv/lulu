@@ -6,6 +6,8 @@ cimport numpy as np
 import cython
 
 from lulu.ccomp import label
+
+from lulu.connected_region cimport ConnectedRegion as ConnectedRegionT
 from lulu.connected_region import ConnectedRegion
 
 def connected_regions(np.ndarray[np.int_t, ndim=2] img):
@@ -14,6 +16,7 @@ def connected_regions(np.ndarray[np.int_t, ndim=2] img):
     """
     cdef int rows = img.shape[0]
     cdef int columns = img.shape[1]
+    cdef ConnectedRegionT cr
 
     # perform initial labeling
     cdef np.ndarray[np.int_t, ndim=2] labels = label(img)
@@ -49,7 +52,7 @@ def connected_regions(np.ndarray[np.int_t, ndim=2] img):
                 cur_region = regions[prev_label]
 
                 # New row?
-                if cur_region._current_row != r:
+                if cur_region._current_row() != r:
                     cur_region._new_row()
 
                 # Add connected region
@@ -57,9 +60,9 @@ def connected_regions(np.ndarray[np.int_t, ndim=2] img):
 
                 connect_from = c
 
-        # finalise rows
-        for cr in regions:
-            cr._new_row()
-            cr.reshape()
+    # finalise rows
+    for cr in regions:
+        cr._new_row()
+        cr.reshape()
 
     return regions
