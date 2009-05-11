@@ -23,11 +23,11 @@ class TestLULU:
 
         regions[0].value = 5
         assert_array_equal(regions[0].todense(),
-                           [[5, 5, 5, 5],
-                            [5, 0, 0, 0],
-                            [5, 0, 0, 0],
-                            [5, 5, 5, 5],
-                            [5, 5, 5, 5]])
+                           [[5, 5, 5, 5, 0],
+                            [5, 0, 0, 0, 0],
+                            [5, 0, 0, 0, 0],
+                            [5, 5, 5, 5, 0],
+                            [5, 5, 5, 5, 0]])
 
         assert_array_equal(regions[1].todense(),
                            [[0, 0, 0, 0, 1],
@@ -38,6 +38,8 @@ class TestLULU:
 
         print regions[2].todense()
         assert_array_equal(regions[2].todense(),
-                           [[0, 0, 0, 0],
-                            [0, 2, 2, 2],
-                            [0, 2, 2, 2]])
+                           [[0, 0, 0, 0, 0],
+                            [0, 2, 2, 2, 0],
+                            [0, 2, 2, 2, 0],
+                            [0, 0, 0, 0, 0],
+                            [0, 0, 0, 0, 0]])
