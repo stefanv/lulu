@@ -10,6 +10,7 @@ ctypedef void PyObject
 
 from lulu.ccomp import label
 from lulu.connected_region cimport ConnectedRegion
+cimport lulu.connected_region_handler as crh
 
 def connected_regions(np.ndarray[np.int_t, ndim=2] img):
     """Return ConnectedRegions that, together, compose the whole image.
@@ -53,16 +54,16 @@ def connected_regions(np.ndarray[np.int_t, ndim=2] img):
                 cur_region = regions[prev_label]
 
                 # New row?
-                if cur_region._current_row() != r:
-                    cur_region._new_row()
+                if crh._current_row(cur_region) != r:
+                    crh._new_row(cur_region)
 
                 # Add connected region
-                cur_region._append_colptr(connect_from, c)
+                crh._append_colptr(cur_region, connect_from, c)
 
                 connect_from = c
 
     # finalise rows
     for cr in regions.itervalues():
-        cr._new_row()
+        crh._new_row(cr)
 
     return regions

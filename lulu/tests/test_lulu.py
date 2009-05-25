@@ -2,6 +2,7 @@ from numpy.testing import *
 import numpy as np
 
 import lulu
+import lulu.connected_region_handler as crh
 
 class TestLULU:
     img = np.zeros((5, 5)).astype(int)
@@ -21,23 +22,22 @@ class TestLULU:
 
         assert_equal(len(regions), 3)
 
-        regions[0].value = 5
-        assert_array_equal(regions[0].todense(),
+        crh.set_value(regions[0], 5)
+        assert_array_equal(crh.todense(regions[0]),
                            [[5, 5, 5, 5, 0],
                             [5, 0, 0, 0, 0],
                             [5, 0, 0, 0, 0],
                             [5, 5, 5, 5, 0],
                             [5, 5, 5, 5, 0]])
 
-        assert_array_equal(regions[1].todense(),
+        assert_array_equal(crh.todense(regions[1]),
                            [[0, 0, 0, 0, 1],
                             [0, 0, 0, 0, 1],
                             [0, 0, 0, 0, 1],
                             [0, 0, 0, 0, 1],
                             [0, 0, 0, 0, 1]])
 
-        print regions[2].todense()
-        assert_array_equal(regions[2].todense(),
+        assert_array_equal(crh.todense(regions[2]),
                            [[0, 0, 0, 0, 0],
                             [0, 2, 2, 2, 0],
                             [0, 2, 2, 2, 0],

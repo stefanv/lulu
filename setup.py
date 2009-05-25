@@ -9,5 +9,6 @@ def cext(name):
 
 setup(cmdclass = {'build_ext': build_ext},
       ext_modules = [cext('connected_region'),
+                     cext('connected_region_handler'),
                      cext('ccomp'),
                      cext('base')])
