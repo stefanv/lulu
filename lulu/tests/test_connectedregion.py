@@ -119,3 +119,32 @@ class TestConnectedRegion:
 
         crh.set_value(c, 1)
         assert_equal(crh.boundary_minimum(c, img), 0)
+
+    def test_merge(self):
+        a = ConnectedRegion(shape=(3, 3), value=1,
+                            rowptr=[0, 2, 4, 6],
+                            colptr=[0, 3, 0, 1, 0, 3])
+        b = ConnectedRegion(shape=(3, 3), value=1,
+                            start_row=1,
+                            rowptr=[0,2],
+                            colptr=[1,3])
+        crh.merge(a, b)
+        assert_array_equal(crh.todense(a), np.ones((3, 3)))
+
+    def test_merge_different_shapes(self):
+        a = ConnectedRegion(shape=(4, 3), value=1,
+                            start_row=1,
+                            rowptr=[0, 4, 8, 10],
+                            colptr=[0, 1, 2, 3, 0, 1, 2, 3, 0, 3])
+        b = ConnectedRegion(shape=(3, 4), value=1,
+                            rowptr=[0, 2, 6, 10],
+                            colptr=[1, 4, 1, 2, 3, 4, 1, 2, 3, 4])
+        print crh.todense(a)
+        print crh.todense(b)
+        crh.merge(a, b)
+        print crh.todense(a)
+        assert_array_equal(crh.todense(a),
+                           [[0, 1, 1, 1],
+                            [1, 1, 1, 1],
+                            [1, 1, 1, 1],
+                            [1, 1, 1, 0]])

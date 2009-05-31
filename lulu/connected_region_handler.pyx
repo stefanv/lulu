@@ -285,11 +285,82 @@ def boundary_minimum(ConnectedRegion cr, np.ndarray[np.int_t, ndim=2] img):
     return _boundary_minimum(cr, <int*>img.data, img.shape[0], img.shape[1])
 
 
+cdef inline min2(int a, int b):
+    if a < b:
+        return a
+    else:
+        return b
+
+cdef inline max2(int a, int b):
+    if a > b:
+        return a
+    else:
+        return b
+
 cpdef merge(ConnectedRegion a, ConnectedRegion b):
-    """Merge b into a.
+    """Merge b into a.  b and a must be connected.
 
     """
-    pass
+    cdef int r, rpt, cpt
+    cdef int start_row = min2(a._start_row, b._start_row)
+    cdef int end_row = max2(a._start_row + len(a.rowptr) - 2,
+                            b._start_row + len(b.rowptr) - 2)
+
+    cdef list new_colptr = []
+    cdef list new_rowptr = []
+
+    cdef list cols, merged_cols
+
+    for r in range(start_row, end_row + 1):
+        new_rowptr.append(len(new_colptr))
+
+        # Non-overlapping, use b
+        if r < a._start_row or r > (len(a.rowptr) + a._start_row - 2):
+            rpt = r - b._start_row
+            for i in range(b.rowptr[rpt], b.rowptr[rpt + 1]):
+                new_colptr.append(b.colptr[i])
+
+        # Non-overlapping, use a
+        if r < b._start_row or r > (len(b.rowptr) + b._start_row - 2):
+            rpt = r - a._start_row
+            for i in range(a.rowptr[rpt], a.rowptr[rpt + 1]):
+                new_colptr.append(a.colptr[i])
+
+        # Overlapping: merge
+        else:
+
+            cols = []
+            merged_cols = []
+            rpt = r - a._start_row
+            for i in range((a.rowptr[rpt + 1] - a.rowptr[rpt]) / 2):
+                cpt = <int>a.rowptr[rpt] + 2 * i
+
+                cols.append([a.colptr[cpt], a.colptr[cpt + 1]])
+
+            rpt = r - b._start_row
+            for i in range((b.rowptr[rpt + 1] - b.rowptr[rpt]) / 2):
+                cpt = <int>b.rowptr[rpt] + 2 * i
+
+                cols.append([b.colptr[cpt], b.colptr[cpt + 1]])
+
+            cols.sort()
+
+            for i in range(len(cols) - 1):
+                if cols[i][1] == cols[i+1][0]:
+                    cols[i+1][0] = cols[i][0]
+                    continue
+                merged_cols.append(cols[i])
+
+            merged_cols.extend(cols[-1])
+
+            new_colptr.extend(merged_cols)
+
+    new_rowptr.append(len(new_colptr))
+
+    a.colptr = new_colptr
+    a.rowptr = new_rowptr
+    a._start_row = start_row
+    reshape(a)
 
 cdef _set_array(int* arr, int rows, int cols,
                ConnectedRegion c, int value):
