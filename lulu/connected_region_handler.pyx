@@ -253,6 +253,8 @@ cdef int _boundary_extremum(ConnectedRegion cr, int* img,
     cdef int img_val
     cdef int extremum = initial_extremum
 
+    cdef list x, y
+
     y, x = outside_boundary(cr)
 
     for i in range(1, len(y)):
@@ -282,6 +284,24 @@ def boundary_maximum(ConnectedRegion cr, np.ndarray[np.int_t, ndim=2] img):
 def boundary_minimum(ConnectedRegion cr, np.ndarray[np.int_t, ndim=2] img):
     return _boundary_minimum(cr, <int*>img.data, img.shape[0], img.shape[1])
 
+
+cpdef merge(ConnectedRegion a, ConnectedRegion b):
+    """Merge b into a.
+
+    """
+    pass
+
+cdef _set_array(int* arr, int rows, int cols,
+               ConnectedRegion c, int value):
+    """Set the value of arr to value over the connected region.
+
+    """
+    pass
+
+def set_array(np.ndarray[np.int_t, ndim=2] arr,
+              ConnectedRegion c, int value):
+    return _set_array(<int*>arr.data, arr.shape[0], arr.shape[1],
+                      c, value)
 
 # These methods are needed by the lulu decomposition to build
 # connected regions incrementally

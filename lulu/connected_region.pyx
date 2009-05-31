@@ -28,7 +28,22 @@ cdef class ConnectedRegion:
         described
     colptr : list of int
         Always contains 2N elements, where N are the number of connected
-        regions (see description above).
+        regions (see description above).  Each entry describes the half-open
+        interval ``(start_position, end_position]``.
+
+    Parameters
+    ----------
+    shape : tuple
+        Shape of the region.
+
+    Optional Parameters
+    -------------------
+    value : int
+        Region value.
+    start_row : int
+        First row in which values occur.
+    rowptr, colptr : list of int
+        See "Attributes".
 
     """
 

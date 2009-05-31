@@ -16,10 +16,10 @@ times = []
 for i in range(runs):
     print "Run %s/%s" % (i, runs)
     tic = time.time()
-    out = lulu.connected_regions(x)
+    lulu.decompose(x)
     toc = time.time()
 
     times.append(toc - tic)
 
 print "Minimum execution time over three runs: %ss" % min(times)
-print "Connected regions found:", len(out)
+
