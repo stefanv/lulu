@@ -1,3 +1,5 @@
+# -*- python -*-
+
 __all__ = ['connected_regions']
 
 import numpy as np
@@ -14,6 +16,18 @@ cimport lulu.connected_region_handler as crh
 
 def connected_regions(np.ndarray[np.int_t, ndim=2] img):
     """Return ConnectedRegions that, together, compose the whole image.
+
+    Parameters
+    ----------
+    img : ndarray
+        Input image.
+
+    Returns
+    -------
+    labels : ndarray
+        `img`, labeled by connectivity.
+    c : dict
+        Dictionary of ConnectedRegions, indexed by label value.
 
     """
     cdef int rows = img.shape[0]
@@ -66,4 +80,4 @@ def connected_regions(np.ndarray[np.int_t, ndim=2] img):
     for cr in regions.itervalues():
         crh._new_row(cr)
 
-    return regions
+    return labels, regions

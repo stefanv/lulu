@@ -18,7 +18,9 @@ class TestLULU:
     """
 
     def test_connected_regions(self):
-        regions = lulu.connected_regions(self.img)
+        labels, regions = lulu.connected_regions(self.img)
+
+        assert_array_equal(labels, self.img)
 
         assert_equal(len(regions), 3)
 
