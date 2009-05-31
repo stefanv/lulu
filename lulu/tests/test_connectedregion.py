@@ -110,3 +110,12 @@ class TestConnectedRegion:
 
         crh.set_value(c, -1)
         assert_equal(crh.is_maximal(c, img), False)
+
+    def test_minimal(self):
+        c = ConnectedRegion(shape=(3, 3), value=-1,
+                            rowptr=[0, 2], colptr=[0, 1])
+        img = crh.todense(c)
+        assert_equal(crh.is_minimal(c, img), True)
+
+        crh.set_value(c, 1)
+        assert_equal(crh.is_minimal(c, img), False)
