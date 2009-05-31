@@ -223,6 +223,30 @@ cpdef validate(ConnectedRegion cr):
     if len(cr.colptr) % 2 != 0:
         raise RuntimeError("Colptr must have 2xN entries.")
 
+cdef bool _is_maximal(ConnectedRegion cr, int* img, int max_rows, int max_cols):
+    """Determine if the ConnectedRegion is maximal in the given image.
+
+    """
+    cdef int i, r, c
+    cdef int value = crh.get_value(cr)
+
+    y, x = outside_boundary(cr)
+
+    for i in range(len(y)):
+        r = y[i]
+        c = x[i]
+
+        if (r < 0 or r >= max_rows) or (c < 0 or c >= max_cols):
+            continue
+
+        if img[r*max_cols + c] > value:
+            return False
+
+    return True
+
+def is_maximal(ConnectedRegion cr, np.ndarray[np.int_t, ndim=2] img):
+    return _is_maximal(cr, <int*>img.data, img.shape[0], img.shape[1])
+
 # These methods are needed by the lulu decomposition to build
 # connected regions incrementally
 
