@@ -81,25 +81,26 @@ def connected_regions(np.ndarray[np.int_t, ndim=2] img):
     return labels, regions
 
 cdef _reset_and_merge(ConnectedRegion cr, int new_value,
-                      dict regions, dict regions_by_value,
+                      dict regions, dict regions_by_area,
                       int* image, int* labels, int rows, int cols):
 
     cdef list regions_to_merge = []
     cdef list x, y
     cdef int i, r, c, idx
-    cdef ConnectedRegion primary_region, cur_region, tmp_region
-    cdef int primary_label, cur_label
+    cdef ConnectedRegion cur_region, tmp_region
+    cdef int primary_label, cur_label, area, cr_label
 
-    primary_region = cr
-    primary_label = labels[cr._start_row * cols + <int>cr.colptr[0]]
+    cr_label = labels[cr._start_row * cols + <int>cr.colptr[0]]
+    primary_label = cr_label
 
     # Check boundary for regions to merge
-    x, y = crh.outside_boundary(cr)
+    y, x = crh.outside_boundary(cr)
+
     for i in range(len(y)):
         r = y[i]
         c = x[i]
 
-        idx = r*rows + cols
+        idx = r*cols + c
 
         # boundary check
         if (r < 0 or r >= rows) or (c < 0 or c >= cols):
@@ -108,27 +109,43 @@ cdef _reset_and_merge(ConnectedRegion cr, int new_value,
         if image[idx] == new_value:
             cur_label = labels[idx]
             cur_region = regions[cur_label]
+
+            # Don't process region twice
+            if cur_region in regions_to_merge:
+                continue
+
             if cur_label < primary_label:
-                # The current label occurs earlier on in the image.  Make
-                # this region the primary label, and put the other region
-                # in the list to merge.
-                tmp_region = primary_label
-                primary_region = cur_region
+                # The current label occurs earlier on in the image than
+                # cr.  This should then be the label for the merged region.
                 primary_label = cur_label
-                cur_region = tmp_region
 
             regions_to_merge.append(cur_region)
 
             # Since this region is about to be merged, remove it from the
             # regions and regions_by_area list
             del regions[cur_label]
-            regions_by_value[cur_region.value].remove(cur_region)
+            regions_by_area[crh.nnz(cur_region)].remove(cur_region)
 
-    # Merge boundary regions, update labels and image
+    print len(regions_to_merge)
+
+    # Merge boundary regions, update regions_by_area, regions,
+    # update labels and image
     for cur_region in regions_to_merge:
-        crh.merge(primary_region, cur_region)
+        area = crh.nnz(cr)
+        crh.merge(cr, cur_region)
         crh._set_array(labels, rows, cols, cur_region, primary_label)
         crh._set_array(image, rows, cols, cur_region, cur_region._value)
+
+        # Update regions
+        del regions[cr_label]
+        regions[primary_label] = cr
+
+        # Update regions_by_area
+        regions_by_area[area].remove(cr)
+        if area in regions_by_area:
+            regions_by_area[area].append(cr)
+        else:
+            regions_by_area[area] = [cr]
 
 def decompose(np.ndarray[np.int_t, ndim=2] img):
     cdef np.ndarray[np.int_t, ndim=2] labels
@@ -158,17 +175,15 @@ def decompose(np.ndarray[np.int_t, ndim=2] img):
     cdef bool merged = True
     cdef list area_regions
     cdef int b_min, b_max
-    cdef ConnectedRegion r
 
     while merged:
         area_regions = regions_by_area.get(area, [])
 
-        for r in area_regions:
+        for cr in area_regions:
             b_max = crh._boundary_maximum(cr, img_data, max_cols, max_rows)
 
             # Do we have a maximal set?
             if b_max < cr._value:
-                pass
                 _reset_and_merge(cr, b_max, regions, regions_by_area,
                                  img_data, labels_data, max_rows, max_cols)
 
@@ -177,7 +192,6 @@ def decompose(np.ndarray[np.int_t, ndim=2] img):
 
             # Do we have a minimal set?
             if b_min > cr._value:
-                pass
                 _reset_and_merge(cr, b_min, regions, regions_by_area,
                                  img_data, labels_data, max_rows, max_cols)
 

@@ -321,7 +321,7 @@ cpdef merge(ConnectedRegion a, ConnectedRegion b):
                 new_colptr.append(b.colptr[i])
 
         # Non-overlapping, use a
-        if r < b._start_row or r > (len(b.rowptr) + b._start_row - 2):
+        elif r < b._start_row or r > (len(b.rowptr) + b._start_row - 2):
             rpt = r - a._start_row
             for i in range(a.rowptr[rpt], a.rowptr[rpt + 1]):
                 new_colptr.append(a.colptr[i])
