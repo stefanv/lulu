@@ -16,8 +16,8 @@ cpdef outside_boundary(ConnectedRegion cr)
 cpdef set_value(ConnectedRegion cr, int v)
 cpdef int get_value(ConnectedRegion cr)
 cpdef validate(ConnectedRegion cr)
-cdef _is_maximal(ConnectedRegion cr, int*, int, int)
-cdef _is_minimal(ConnectedRegion cr, int*, int, int)
+cdef int _boundary_maximum(ConnectedRegion cr, int*, int, int)
+cdef int _boundary_minimum(ConnectedRegion cr, int*, int, int)
 
 # These methods are needed by the lulu decomposition to build
 # connected regions incrementally

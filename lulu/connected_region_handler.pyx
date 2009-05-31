@@ -229,40 +229,58 @@ cdef inline bool gt(int a, int b):
 cdef inline bool lt(int a, int b):
     return a < b
 
-cdef bool _is_extremum(ConnectedRegion cr, int* img,
-                       int max_rows, int max_cols,
-                       bool (*func)(int, int)):
-    """Determine if the ConnectedRegion is maximal/minimal in the given image.
+cdef int _boundary_extremum(ConnectedRegion cr, int* img,
+                            int max_rows, int max_cols,
+                            bool (*func)(int, int),
+                            int initial_extremum = 0):
+    """Determine the extremal value on the boundary of a
+    ConnectedRegion.
+
+    Parameters
+    ----------
+    cr : ConnectedRegion
+    img : Input image as positive integer array
+    max_rows, max_cols : int
+        Dimensions of img.
+    func : callable
+        Function used to test for the extreme value:
+
+        func(img[r, c], cr.value)
+    initial_extremum : int
 
     """
     cdef int i, r, c
-    cdef int value = crh.get_value(cr)
+    cdef int img_val
+    cdef int extremum = initial_extremum
 
     y, x = outside_boundary(cr)
 
-    for i in range(len(y)):
+    for i in range(1, len(y)):
         r = y[i]
         c = x[i]
 
         if (r < 0 or r >= max_rows) or (c < 0 or c >= max_cols):
             continue
 
-        if func(img[r*max_cols + c], value):
-            return False
+        img_val = img[r*max_cols + c]
+        if func(img_val, extremum):
+            extremum = img_val
 
-    return True
+    return extremum
 
-cdef _is_maximal(ConnectedRegion cr, int* img, int max_rows, int max_cols):
-    return _is_extremum(cr, img, max_rows, max_cols, gt)
+cdef int _boundary_maximum(ConnectedRegion cr, int* img,
+                           int max_rows, int max_cols):
+    return _boundary_extremum(cr, img, max_rows, max_cols, gt, -1)
 
-cdef _is_minimal(ConnectedRegion cr, int* img, int max_rows, int max_cols):
-    return _is_extremum(cr, img, max_rows, max_cols, lt)
+cdef int _boundary_minimum(ConnectedRegion cr, int* img,
+                           int max_rows, int max_cols):
+    return _boundary_extremum(cr, img, max_rows, max_cols, lt, 256)
 
-def is_maximal(ConnectedRegion cr, np.ndarray[np.int_t, ndim=2] img):
-    return _is_maximal(cr, <int*>img.data, img.shape[0], img.shape[1])
+def boundary_maximum(ConnectedRegion cr, np.ndarray[np.int_t, ndim=2] img):
+    return _boundary_maximum(cr, <int*>img.data, img.shape[0], img.shape[1])
 
-def is_minimal(ConnectedRegion cr, np.ndarray[np.int_t, ndim=2] img):
-    return _is_minimal(cr, <int*>img.data, img.shape[0], img.shape[1])
+def boundary_minimum(ConnectedRegion cr, np.ndarray[np.int_t, ndim=2] img):
+    return _boundary_minimum(cr, <int*>img.data, img.shape[0], img.shape[1])
 
 
 # These methods are needed by the lulu decomposition to build
