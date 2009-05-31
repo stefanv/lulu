@@ -364,10 +364,18 @@ cpdef merge(ConnectedRegion a, ConnectedRegion b):
 
 cdef _set_array(int* arr, int rows, int cols,
                ConnectedRegion c, int value):
-    """Set the value of arr to value over the connected region.
+    """Set the value of arr over the connected region.
 
     """
-    pass
+    cdef int r, start, end
+
+    for r, start, end in crh._iterate_rows(c):
+        if r >= 0 and r < rows and \
+           start >= 0 and start < cols and \
+           end >= 0 and end <= cols:
+
+            for k in range(start, end):
+                arr[r*cols + k] = value
 
 def set_array(np.ndarray[np.int_t, ndim=2] arr,
               ConnectedRegion c, int value):
