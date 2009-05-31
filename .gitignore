@@ -3,4 +3,4 @@
 *.so
 *.c
 build
-
+lulu/*.html
