@@ -363,10 +363,11 @@ cpdef merge(ConnectedRegion a, ConnectedRegion b):
     reshape(a)
 
 cdef _set_array(int* arr, int rows, int cols,
-               ConnectedRegion cr, int value):
+                ConnectedRegion cr, int value,
+                int mode=0):
     """Set the value of arr over the connected region.
 
-    If value is negative, add its absolute value to the current value.
+    Mode: 0 == replace, 1 == add
 
     """
     cdef list rowptr = cr.rowptr
@@ -384,17 +385,15 @@ cdef _set_array(int* arr, int rows, int cols,
                 if r >= 0 and r < rows and \
                    start >= 0 and start < cols and \
                    end >= 0 and end <= cols:
-                    if value < 0:
-                        # Negative value, add
-                        arr[(r + start_row)*cols + k] += -value
-                    else:
-                        # Positive value, replace
+                    if mode == 0:
                         arr[(r + start_row)*cols + k] = value
+                    else:
+                        arr[(r + start_row)*cols + k] += value
 
 def set_array(np.ndarray[np.int_t, ndim=2] arr,
-              ConnectedRegion c, int value):
+              ConnectedRegion c, int value, int mode=0):
     return _set_array(<int*>arr.data, arr.shape[0], arr.shape[1],
-                      c, value)
+                      c, value, mode)
 
 # These methods are needed by the lulu decomposition to build
 # connected regions incrementally

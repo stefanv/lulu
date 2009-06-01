@@ -159,7 +159,7 @@ def decompose(np.ndarray[np.int_t, ndim=2] img):
     cdef dict area_histogram = {}
     cdef dict pulses = {}
 
-    cdef int old_value
+    cdef int old_value, levels, percentage_done, percentage
 
     for cr in regions.itervalues():
         try:
@@ -167,9 +167,13 @@ def decompose(np.ndarray[np.int_t, ndim=2] img):
         except KeyError:
             area_histogram[cr._nnz] = 1
 
-    for area in range(max_cols * max_rows):
-        if area % 1000 == 0:
-            print area
+    levels = max_cols * max_rows + 1
+    percentage_done = 0
+    for area in range(levels):
+        percentage = area*100/levels
+        if percentage % 10 == 0 and percentage != percentage_done:
+            print "%s%%" % percentage
+            percentage_done = percentage
 
         try:
             if area_histogram[area] <= 0:
@@ -206,7 +210,7 @@ def decompose(np.ndarray[np.int_t, ndim=2] img):
             if area not in pulses:
                 pulses[area] = []
             cr_save = crh.copy(cr)
-            cr_save._value = old_value
+            cr_save._value = old_value - cr._value # == pulse height
             pulses[area].append(cr_save)
 
             # We don't need to re-examine each merged area for re-merging,
