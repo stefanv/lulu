@@ -7,6 +7,7 @@ import numpy as np
 cimport numpy as np
 
 import cython
+import sys
 
 from lulu.ccomp import label
 from lulu.connected_region cimport ConnectedRegion
@@ -169,10 +170,14 @@ def decompose(np.ndarray[np.int_t, ndim=2] img):
 
     levels = max_cols * max_rows + 1
     percentage_done = 0
+
+    print "[%s      ]" % (" "*50),
+    sys.stdout.flush()
     for area in range(levels):
         percentage = area*100/levels
-        if percentage % 10 == 0 and percentage != percentage_done:
-            print "%s%%" % percentage
+        if percentage != percentage_done:
+            print "\r[=%s> %d%%" % ("=" * (percentage/2), percentage),
+            sys.stdout.flush()
             percentage_done = percentage
 
         try:
@@ -220,4 +225,5 @@ def decompose(np.ndarray[np.int_t, ndim=2] img):
         _merge_all(merge_region_positions, regions, area_histogram,
                    img_data, labels_data, max_rows, max_cols)
 
+    print
     return pulses
