@@ -127,27 +127,23 @@ cdef _merge_all(list merge_region_positions, dict regions, dict area_histogram,
                 except KeyError:
                     area_histogram[new_area] = 1
 
-                # Decide on primary region and merge
-                if new_label != cr_label:
-                    crh.merge(this_region, cr)
-                    del regions[cr_label]
+                crh.merge(cr, this_region)
 
-                    cr = this_region
-                    cr_label = new_label
-                else:
-                    crh.merge(cr, this_region)
-                    del regions[this_label]
+                # OPT: Only one of these deletes need to be executed.
+                del regions[cr_label]
+                del regions[this_label]
+                regions[new_label] = cr
+                cr_label = new_label
 
-                # Update labels and image values
+                # Update labels
                 crh._set_array(labels, rows, cols, cr, new_label)
-                crh._set_array(image, rows, cols, cr, cr._value)
                 cr._nnz = new_area
 
 def decompose(np.ndarray[np.int_t, ndim=2] img):
     cdef np.ndarray[np.int_t, ndim=2] labels
     cdef dict regions
 
-    cdef ConnectedRegion cr
+    cdef ConnectedRegion cr, cr_save
     cdef int nz
 
     cdef int* img_data = <int*>img.data
@@ -161,6 +157,9 @@ def decompose(np.ndarray[np.int_t, ndim=2] img):
     cdef list merge_region_positions
 
     cdef dict area_histogram = {}
+    cdef dict pulses = {}
+
+    cdef int old_value
 
     for cr in regions.itervalues():
         try:
@@ -192,12 +191,23 @@ def decompose(np.ndarray[np.int_t, ndim=2] img):
             b_min = crh._boundary_minimum(cr, img_data, max_rows, max_cols)
 
             # Do we have a maximal or minimal set?
+            old_value = cr._value
             if b_max < cr._value:
+                # Drop peak
                 cr._value = b_max
+                crh._set_array(img_data, max_rows, max_cols, cr, cr._value)
             elif b_min > cr._value:
+                # Raise trough
                 cr._value = b_min
+                crh._set_array(img_data, max_rows, max_cols, cr, cr._value)
             else:
                 continue
+
+            if area not in pulses:
+                pulses[area] = []
+            cr_save = crh.copy(cr)
+            cr_save._value = old_value
+            pulses[area].append(cr_save)
 
             # We don't need to re-examine each merged area for re-merging,
             # so can still optimise this later.
@@ -206,4 +216,4 @@ def decompose(np.ndarray[np.int_t, ndim=2] img):
         _merge_all(merge_region_positions, regions, area_histogram,
                    img_data, labels_data, max_rows, max_cols)
 
-    return labels
+    return pulses

@@ -366,6 +366,8 @@ cdef _set_array(int* arr, int rows, int cols,
                ConnectedRegion cr, int value):
     """Set the value of arr over the connected region.
 
+    If value is negative, add its absolute value to the current value.
+
     """
     cdef list rowptr = cr.rowptr
     cdef list colptr = cr.colptr
@@ -382,7 +384,12 @@ cdef _set_array(int* arr, int rows, int cols,
                 if r >= 0 and r < rows and \
                    start >= 0 and start < cols and \
                    end >= 0 and end <= cols:
-                    arr[(r + start_row)*cols + k] = value
+                    if value < 0:
+                        # Negative value, add
+                        arr[(r + start_row)*cols + k] += -value
+                    else:
+                        # Positive value, replace
+                        arr[(r + start_row)*cols + k] = value
 
 def set_array(np.ndarray[np.int_t, ndim=2] arr,
               ConnectedRegion c, int value):
