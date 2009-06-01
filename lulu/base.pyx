@@ -167,7 +167,7 @@ def decompose(np.ndarray[np.int_t, ndim=2] img):
         except KeyError:
             area_histogram[cr._nnz] = 1
 
-    for area in range(20000):
+    for area in range(max_cols * max_rows):
         if area % 1000 == 0:
             print area
 
