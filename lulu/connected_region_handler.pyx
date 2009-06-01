@@ -261,7 +261,7 @@ cdef int _boundary_extremum(ConnectedRegion cr, int* img,
         r = y[i]
         c = x[i]
 
-        if (r < 0 or r >= max_rows) or (c < 0 or c >= max_cols):
+        if r < 0 or r >= max_rows or c < 0 or c >= max_cols:
             continue
 
         img_val = img[r*max_cols + c]
@@ -285,13 +285,13 @@ def boundary_minimum(ConnectedRegion cr, np.ndarray[np.int_t, ndim=2] img):
     return _boundary_minimum(cr, <int*>img.data, img.shape[0], img.shape[1])
 
 
-cdef inline min2(int a, int b):
+cdef inline int min2(int a, int b):
     if a < b:
         return a
     else:
         return b
 
-cdef inline max2(int a, int b):
+cdef inline int max2(int a, int b):
     if a > b:
         return a
     else:
@@ -301,7 +301,7 @@ cpdef merge(ConnectedRegion a, ConnectedRegion b):
     """Merge b into a.  b and a must be connected.
 
     """
-    cdef int r, rpt, cpt
+    cdef int i, r, rpt, cpt
     cdef int start_row = min2(a._start_row, b._start_row)
     cdef int end_row = max2(a._start_row + len(a.rowptr) - 2,
                             b._start_row + len(b.rowptr) - 2)
@@ -317,28 +317,27 @@ cpdef merge(ConnectedRegion a, ConnectedRegion b):
         # Non-overlapping, use b
         if r < a._start_row or r > (len(a.rowptr) + a._start_row - 2):
             rpt = r - b._start_row
-            for i in range(b.rowptr[rpt], b.rowptr[rpt + 1]):
+            for i in range(<int>b.rowptr[rpt], <int>b.rowptr[rpt + 1]):
                 new_colptr.append(b.colptr[i])
 
         # Non-overlapping, use a
         elif r < b._start_row or r > (len(b.rowptr) + b._start_row - 2):
             rpt = r - a._start_row
-            for i in range(a.rowptr[rpt], a.rowptr[rpt + 1]):
+            for i in range(<int>a.rowptr[rpt], <int>a.rowptr[rpt + 1]):
                 new_colptr.append(a.colptr[i])
 
         # Overlapping: merge
         else:
-
             cols = []
             merged_cols = []
             rpt = r - a._start_row
-            for i in range((a.rowptr[rpt + 1] - a.rowptr[rpt]) / 2):
+            for i in range((<int>a.rowptr[rpt + 1] - <int>a.rowptr[rpt]) // 2):
                 cpt = <int>a.rowptr[rpt] + 2 * i
 
                 cols.append([a.colptr[cpt], a.colptr[cpt + 1]])
 
             rpt = r - b._start_row
-            for i in range((b.rowptr[rpt + 1] - b.rowptr[rpt]) / 2):
+            for i in range((<int>b.rowptr[rpt + 1] - <int>b.rowptr[rpt]) // 2):
                 cpt = <int>b.rowptr[rpt] + 2 * i
 
                 cols.append([b.colptr[cpt], b.colptr[cpt + 1]])
@@ -349,7 +348,7 @@ cpdef merge(ConnectedRegion a, ConnectedRegion b):
                 if cols[i][1] == cols[i+1][0]:
                     cols[i+1][0] = cols[i][0]
                     continue
-                merged_cols.append(cols[i])
+                merged_cols.extend(cols[i])
 
             merged_cols.extend(cols[-1])
 
@@ -363,19 +362,26 @@ cpdef merge(ConnectedRegion a, ConnectedRegion b):
     reshape(a)
 
 cdef _set_array(int* arr, int rows, int cols,
-               ConnectedRegion c, int value):
+               ConnectedRegion cr, int value):
     """Set the value of arr over the connected region.
 
     """
-    cdef int r, start, end
+    cdef list rowptr = cr.rowptr
+    cdef list colptr = cr.colptr
 
-    for r, start, end in crh._iterate_rows(c):
-        if r >= 0 and r < rows and \
-           start >= 0 and start < cols and \
-           end >= 0 and end <= cols:
+    cdef int r, c, start, end, k, start_row = cr._start_row
+
+    for r in range(len(rowptr) - 1):
+        for c in range((rowptr[r + 1] - rowptr[r]) / 2):
+            start = colptr[<int>rowptr[r] + 2*c]
+            end = colptr[<int>rowptr[r] + 2*c + 1]
 
             for k in range(start, end):
-                arr[r*cols + k] = value
+                # This could probably be done more efficiently
+                if r >= 0 and r < rows and \
+                   start >= 0 and start < cols and \
+                   end >= 0 and end <= cols:
+                    arr[(r + start_row)*cols + k] = value
 
 def set_array(np.ndarray[np.int_t, ndim=2] arr,
               ConnectedRegion c, int value):
