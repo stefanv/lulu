@@ -21,6 +21,10 @@ cdef int _boundary_minimum(ConnectedRegion cr, int*, int, int)
 cpdef merge(ConnectedRegion, ConnectedRegion)
 cdef _set_array(int* arr, int rows, int cols, ConnectedRegion c, int value)
 
+# Useful functions
+cdef inline int min2(int a, int b)
+cdef inline int max2(int a, int b)
+
 # These methods are needed by the lulu decomposition to build
 # connected regions incrementally
 

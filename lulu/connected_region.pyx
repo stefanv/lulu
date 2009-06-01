@@ -11,6 +11,8 @@ of these objects.
 
 """
 
+import lulu.connected_region_handler as crh
+
 cdef class ConnectedRegion:
     """
     A 4-connected region is stored in a modified Compressed
@@ -68,3 +70,9 @@ cdef class ConnectedRegion:
             self.colptr = colptr
 
         self._start_row = start_row
+
+        # Initialise nnz (nr of non-zeros or area of region)
+        cdef int i
+        self._nnz = 0
+        for i in range((self.rowptr[-1] - self.rowptr[0]) / 2):
+            self._nnz += self.colptr[2*i + 1] - self.colptr[2*i]

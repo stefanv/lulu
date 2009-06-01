@@ -44,7 +44,7 @@ cpdef int nnz(ConnectedRegion cr):
     cdef int n = 0
     cdef int i
 
-    for i in range(len(cr.colptr) / 2):
+    for i in range((cr.rowptr[-1] - cr.rowptr[0]) / 2):
         n += cr.colptr[2*i + 1] - cr.colptr[2*i]
 
     return n
@@ -223,15 +223,16 @@ cpdef validate(ConnectedRegion cr):
     if len(cr.colptr) % 2 != 0:
         raise RuntimeError("Colptr must have 2xN entries.")
 
-cdef inline bool gt(int a, int b):
+# Return type should be bool, but cython complains
+cdef inline int gt(int a, int b):
     return a > b
 
-cdef inline bool lt(int a, int b):
+cdef inline int lt(int a, int b):
     return a < b
 
 cdef int _boundary_extremum(ConnectedRegion cr, int* img,
                             int max_rows, int max_cols,
-                            bool (*func)(int, int),
+                            int (*func)(int, int),
                             int initial_extremum = 0):
     """Determine the extremal value on the boundary of a
     ConnectedRegion.
@@ -265,7 +266,7 @@ cdef int _boundary_extremum(ConnectedRegion cr, int* img,
             continue
 
         img_val = img[r*max_cols + c]
-        if func(img_val, extremum):
+        if func(img_val, extremum) == 1:
             extremum = img_val
 
     return extremum
