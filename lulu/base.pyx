@@ -103,11 +103,11 @@ cdef _merge_all(list merge_region_positions, dict regions, dict area_histogram,
             r = y[i]
             c = x[i]
 
-            idx = r*cols + c
-
             # boundary check
             if (r < 0 or r >= rows) or (c < 0 or c >= cols):
                 continue
+
+            idx = r*cols + c
 
             # Check whether these regions should be merged (only if they
             # haven't been already)
