@@ -72,7 +72,9 @@ cdef class ConnectedRegion:
         self._start_row = start_row
 
         # Initialise nnz (nr of non-zeros or area of region)
-        cdef int i
-        self._nnz = 0
+        cdef int i, n
+        n = 0
         for i in range((self.rowptr[-1] - self.rowptr[0]) / 2):
-            self._nnz += self.colptr[2*i + 1] - self.colptr[2*i]
+            n += self.colptr[2*i + 1] - self.colptr[2*i]
+
+        self._nnz = n

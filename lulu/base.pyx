@@ -77,6 +77,7 @@ def connected_regions(np.ndarray[np.int_t, ndim=2] img):
     # finalise rows
     for cr in regions.itervalues():
         crh._new_row(cr)
+        cr._nnz = crh.nnz(cr)
 
     return labels, regions
 
@@ -159,7 +160,7 @@ def decompose(np.ndarray[np.int_t, ndim=2] img):
 
         # Examine regions of a certain size only
         for cr in regions.itervalues():
-            if crh.nnz(cr) != area:
+            if cr._nnz != area:
                 # Only interested in regions of a certain area.
                 continue
 
