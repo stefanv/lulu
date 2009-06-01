@@ -1,0 +1,1 @@
+valgrind --tool=callgrind -v --dump-instr=yes --trace-jump=yes --callgrind-out-file=callgrind.log python benchmark.py
