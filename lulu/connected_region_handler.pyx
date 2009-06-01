@@ -258,7 +258,7 @@ cdef int _boundary_extremum(ConnectedRegion cr, int* img,
 
     y, x = outside_boundary(cr)
 
-    for i in range(1, len(y)):
+    for i in range(len(y)):
         r = y[i]
         c = x[i]
 
