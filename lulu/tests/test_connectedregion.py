@@ -131,6 +131,16 @@ class TestConnectedRegion:
         crh.merge(a, b)
         assert_array_equal(crh.todense(a), np.ones((3, 3)))
 
+        a = ConnectedRegion(shape=(1, 2), value=2,
+                            rowptr=[0, 2],
+                            colptr=[1, 2])
+        b = ConnectedRegion(shape=(1, 3), value=1,
+                            rowptr=[0, 2],
+                            colptr=[2, 3])
+
+        crh.merge(a, b)
+        assert_array_equal(crh.todense(a), [[0, 2, 2]])
+
     def test_merge_different_shapes(self):
         a = ConnectedRegion(shape=(4, 3), value=1,
                             start_row=1,
