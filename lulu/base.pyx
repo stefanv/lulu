@@ -81,7 +81,7 @@ def connected_regions(np.ndarray[np.int_t, ndim=2] img):
 
     return labels, regions
 
-cdef _merge_all(list merge_region_positions, dict regions,
+cdef _merge_all(list merge_region_positions, dict regions, dict area_histogram,
                 int* image, int* labels, int rows, int cols):
     """
     Merge all regions that have connections on their boundaries.
@@ -118,7 +118,14 @@ cdef _merge_all(list merge_region_positions, dict regions,
                 # Merge; update regions, labels and image
                 new_label = crh.min2(cr_label, this_label)
 
+                # Update area histogram
                 new_area = cr._nnz + this_region._nnz
+                area_histogram[cr._nnz] -= 1
+                area_histogram[this_region._nnz] -= 1
+                try:
+                    area_histogram[new_area] += 1
+                except KeyError:
+                    area_histogram[new_area] = 1
 
                 # Decide on primary region and merge
                 if new_label != cr_label:
@@ -153,9 +160,24 @@ def decompose(np.ndarray[np.int_t, ndim=2] img):
     cdef int b_min, b_max
     cdef list merge_region_positions
 
-    for area in range(1000):
-        if area % 10 == 0:
+    cdef dict area_histogram = {}
+
+    for cr in regions.itervalues():
+        try:
+            area_histogram[cr._nnz] += 1
+        except KeyError:
+            area_histogram[cr._nnz] = 1
+
+    for area in range(20000):
+        if area % 1000 == 0:
             print area
+
+        try:
+            if area_histogram[area] <= 0:
+                continue
+        except KeyError:
+            continue
+
         merge_region_positions = []
 
         # Examine regions of a certain size only
@@ -181,7 +203,7 @@ def decompose(np.ndarray[np.int_t, ndim=2] img):
             # so can still optimise this later.
             merge_region_positions.append((cr._start_row, <int>cr.colptr[0]))
 
-        _merge_all(merge_region_positions, regions,
+        _merge_all(merge_region_positions, regions, area_histogram,
                    img_data, labels_data, max_rows, max_cols)
 
     return labels
