@@ -171,7 +171,7 @@ def decompose(np.ndarray[np.int_t, ndim=2] img):
     levels = max_cols * max_rows + 1
     percentage_done = 0
 
-    print "[%s      ]" % (" "*50),
+    print "[> 0%% %s ]" % (" "*50),
     sys.stdout.flush()
     for area in range(levels):
         percentage = area*100/levels
