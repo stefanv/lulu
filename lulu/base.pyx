@@ -140,11 +140,76 @@ cdef _merge_all(list merge_region_positions, dict regions, dict area_histogram,
                 crh._set_array(labels, rows, cols, cr, new_label)
                 cr._nnz = new_area
 
+cdef list _identify_pulses_and_merges(dict regions, int area, dict pulses,
+                                      int* img_data, int rows, int cols,
+                                      mode=0):
+    """Return pulses that need to be removed, as well as the
+    positions of areas that requires merging after the removal.
+
+    Parameters
+    ----------
+    mode : int
+        0 - U (upper), raise minima
+        1 - L (lower), lower maxima
+        2 - B (both), do both
+
+    """
+    cdef ConnectedRegion cr, cr_save
+
+    cdef int b_max = cr._value
+    cdef int b_min = cr._value
+
+    cdef list merge_region_positions = []
+
+    if area not in pulses:
+        pulses[area] = []
+
+    # Examine regions of a certain size only
+    for cr in regions.itervalues():
+        if cr._nnz != area:
+            # Only interested in regions of a certain area.
+            continue
+
+        old_value = cr._value
+
+        # Upper
+        if mode == 0 or mode == 2:
+            b_min = crh._boundary_minimum(cr, img_data, rows, cols)
+
+            # Minimal set
+            if b_min > old_value:
+                cr._value = b_min
+
+        # Lower
+        if mode == 1 or mode == 2:
+            b_max = crh._boundary_maximum(cr, img_data, rows, cols)
+
+            # Maximal set
+            if b_max < old_value:
+                cr._value = b_max
+
+        # Minimal or maximal region detected
+        if cr._value != old_value:
+            crh._set_array(img_data, rows, cols, cr, cr._value)
+
+            cr_save = crh.copy(cr)
+            cr_save._value = old_value - cr._value # == pulse height
+            pulses[area].append(cr_save)
+
+            # We don't need to re-examine each merged area for re-merging,
+            # so can still optimise this later.
+            merge_region_positions.append((cr._start_row, <int>cr.colptr[0]))
+
+    if len(pulses[area]) == 0:
+        del pulses[area]
+
+    return merge_region_positions
+
 def decompose(np.ndarray[np.int_t, ndim=2] img):
     cdef np.ndarray[np.int_t, ndim=2] labels
     cdef dict regions
 
-    cdef ConnectedRegion cr, cr_save
+    cdef ConnectedRegion cr
     cdef int nz
 
     cdef int* img_data = <int*>img.data
@@ -154,7 +219,6 @@ def decompose(np.ndarray[np.int_t, ndim=2] img):
     labels, regions = connected_regions(img)
     cdef int* labels_data = <int*>labels.data
 
-    cdef int b_min, b_max
     cdef list merge_region_positions
 
     cdef dict area_histogram = {}
@@ -186,44 +250,24 @@ def decompose(np.ndarray[np.int_t, ndim=2] img):
         except KeyError:
             continue
 
-        merge_region_positions = []
+        # Upper
+        merge_region_positions = \
+            _identify_pulses_and_merges(regions, area, pulses,
+                                        img_data, max_rows, max_cols, 0)
 
-        # Examine regions of a certain size only
-        for cr in regions.itervalues():
-            if cr._nnz != area:
-                # Only interested in regions of a certain area.
-                continue
-
-            # Could combine these two functions calls, then we need
-            # only one loop.
-            b_max = crh._boundary_maximum(cr, img_data, max_rows, max_cols)
-            b_min = crh._boundary_minimum(cr, img_data, max_rows, max_cols)
-
-            # Do we have a maximal or minimal set?
-            old_value = cr._value
-            if b_max < cr._value:
-                # Drop peak
-                cr._value = b_max
-                crh._set_array(img_data, max_rows, max_cols, cr, cr._value)
-            elif b_min > cr._value:
-                # Raise trough
-                cr._value = b_min
-                crh._set_array(img_data, max_rows, max_cols, cr, cr._value)
-            else:
-                continue
-
-            if area not in pulses:
-                pulses[area] = []
-            cr_save = crh.copy(cr)
-            cr_save._value = old_value - cr._value # == pulse height
-            pulses[area].append(cr_save)
-
-            # We don't need to re-examine each merged area for re-merging,
-            # so can still optimise this later.
-            merge_region_positions.append((cr._start_row, <int>cr.colptr[0]))
-
-        _merge_all(merge_region_positions, regions, area_histogram,
+        _merge_all(merge_region_positions,
+                   regions, area_histogram,
                    img_data, labels_data, max_rows, max_cols)
+
+        # Lower
+        merge_region_positions = \
+            _identify_pulses_and_merges(regions, area, pulses,
+                                        img_data, max_rows, max_cols, 1)
+
+        _merge_all(merge_region_positions,
+                   regions, area_histogram,
+                   img_data, labels_data, max_rows, max_cols)
+
 
     print
     return pulses
