@@ -51,40 +51,10 @@ def memory_use(regions):
 
     return mem
 
-def reconstruct(regions, shape, min_area=None, max_area=None):
-    out = np.zeros(shape, dtype=int)
-
-    if max_area is None:
-        max_area = np.inf
-
-    if min_area is None:
-        min_area = 0
-
-    pulses = 0
-    area_count = []
-
-    for area in regions:
-        area_count.append(0)
-
-        if area >= min_area and area <= max_area:
-            pulses += len(regions[area])
-
-            for cr in regions[area]:
-                area_count[-1] += 1
-                crh.set_array(out, cr, crh.get_value(cr), 1)
-
-    areas, area_count = np.array(regions.keys()), np.array(area_count)
-
-    # Sort by area
-    ind = np.argsort(areas)
-    areas = areas[ind]
-    area_count = area_count[ind]
-
-    return out, areas, area_count, pulses
 
 print "-"*78
 print "Reconstructing image...",
-out, areas, area_count, pulses = reconstruct(regions, img.shape)
+out, areas, area_count, pulses = lulu.reconstruct(regions, img.shape)
 print "done."
 print "Reconstructed from %d pulses." % pulses
 print "Estimated memory use: %d bytes" % memory_use(regions)
@@ -113,7 +83,8 @@ plt.title('Histogram of Pulse Areas (up to area %d)' % (ind*3))
 
 print "-"*78
 print "Thresholded reconstruction...",
-out, areas, area_count, pulses = reconstruct(regions, img.shape, min_area=areas[ind])
+out, areas, area_count, pulses = \
+     lulu.reconstruct(regions, img.shape, min_area=areas[ind])
 print "done."
 print "Reconstructed from %d pulses." % pulses
 

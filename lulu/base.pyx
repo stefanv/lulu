@@ -1,6 +1,6 @@
 # -*- python -*-
 
-__all__ = ['connected_regions', 'decompose']
+__all__ = ['connected_regions', 'decompose', 'reconstruct']
 
 import numpy as np
 
@@ -271,3 +271,62 @@ def decompose(np.ndarray[np.int_t, ndim=2] img):
 
     print
     return pulses
+
+def reconstruct(dict regions, tuple shape, int min_area=-1, int max_area=-1):
+    """Reconstruct an image from the given connected regions / pulses.
+
+    Parameters
+    ----------
+    regions : dict
+        Impulses indexed by area.  This is the output of `decompose`.
+    shape : tuple
+        Shape of the output image.
+    min_area, max_area : int
+        Impulses with areas in [min_area, max_area] are used for the
+        reconstruction.
+
+    Returns
+    -------
+    out : ndimage
+        Reconstructed image.
+    areas : 1d ndarray
+        Pulses with these areas occur in the image.
+    area_count : 1d ndarray
+        For each area in the above list, there are this many impulses.
+    pulses : int
+        Total number of impulses in the image.
+
+    """
+    cdef ConnectedRegion cr
+
+    cdef np.ndarray[np.int_t, ndim=2] out = np.zeros(shape, dtype=int)
+
+    if max_area == -1:
+        max_area = out.shape[0] * out.shape[1] + 1
+
+    if min_area == -1:
+        min_area = 0
+
+    cdef int pulses = 0
+    cdef list area_count = []
+    cdef int a
+
+    for a in regions:
+        area_count.append(0)
+
+        if a >= min_area and a <= max_area:
+            pulses += len(regions[a])
+
+            for cr in regions[a]:
+                area_count[-1] += 1
+                crh._set_array(<int*>out.data, out.shape[0], out.shape[1],
+                               cr, cr._value, 1)
+
+    areas, area_count_arr = np.array(regions.keys()), np.array(area_count)
+
+    # Sort by area
+    ind = np.argsort(areas)
+    areas = areas[ind]
+    area_count_arr = area_count_arr[ind]
+
+    return out, areas, area_count_arr, pulses
