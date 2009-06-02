@@ -162,7 +162,10 @@ class TestConnectedRegion:
     def test_set_array(self):
         x = np.zeros((5, 5), dtype=int)
         crh.set_array(x, self.c, 5)
-        print crh.todense(self.c)
-        print x
         assert_array_equal(x, self.dense * 5)
 
+    def test_set_array_increment(self):
+        x = np.zeros((5, 5), dtype=int)
+        crh.set_array(x, self.c, 5)
+        crh.set_array(x, self.c, 5, 'add')
+        assert_array_equal(x, self.dense * 5 * 2)

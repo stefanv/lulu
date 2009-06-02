@@ -391,9 +391,14 @@ cdef _set_array(int* arr, int rows, int cols,
                         arr[(r + start_row)*cols + k] += value
 
 def set_array(np.ndarray[np.int_t, ndim=2] arr,
-              ConnectedRegion c, int value, int mode=0):
+              ConnectedRegion c, int value, str mode='replace'):
+
+    cdef int add_mode = 0
+    if mode == 'add':
+        add_mode = 1
+
     return _set_array(<int*>arr.data, arr.shape[0], arr.shape[1],
-                      c, value, mode)
+                      c, value, add_mode)
 
 cpdef mem_use(ConnectedRegion cr):
     """Estimate memory usage of the given region.
