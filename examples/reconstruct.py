@@ -1,8 +1,10 @@
 import sys
 sys.path.insert(0, '..')
 
+from demo import load_image
+
 import numpy as np
-import PIL.Image as Image
+import matplotlib.pyplot as plt
 
 import os
 import time
@@ -11,34 +13,15 @@ import lulu
 import lulu.connected_region_handler as crh
 
 N = 300
-runs = 1
-
-if len(sys.argv) == 2:
-    img = Image.open(sys.argv[1])
-else:
-    img = Image.open(os.path.join(os.path.dirname(__file__),
-                                  'data/chelsea.jpg'))
-
-img = np.array(img.convert('F')).astype(int)
-
-# Random test data
-#img = np.random.randint(255, size=(N, N))
-#img[10:250, 50:100] = 10
+img = load_image()
 
 print "Decomposing a %s matrix." % str(img.shape)
 
-times = []
-for i in range(runs):
-    print "Run %s/%s" % (i + 1, runs)
-    tic = time.time()
-    regions = lulu.decompose(img.copy())
-    toc = time.time()
+tic = time.time()
+regions = lulu.decompose(img.copy())
+toc = time.time()
 
-    times.append(toc - tic)
-
-print "Minimum execution time over %d runs: %ss" % (runs, min(times))
-
-import matplotlib.pyplot as plt
+print "Execution time: %.2fs" % (toc - tic)
 
 def memory_use(regions):
     """Estimate the memory use of the given regions.
@@ -71,10 +54,12 @@ plt.subplot(2, 2, 4)
 s = np.cumsum(area_count)
 midpt = (s[-1] + s[0])/2.
 ind = np.argmin(np.abs(s - midpt))
-plt.plot([areas[ind]], [area_count[ind]], 'r.')
+plt.plot([areas[ind]], [area_count[ind]], 'r.', markersize=10)
 
 areas = areas[:ind*3]
 area_count = area_count[:ind*3]
+
+plt.fill_between(areas[ind:], area_count[ind:], alpha=0.3)
 
 plt.plot(areas, area_count)
 plt.xlabel('Pulse Area')
