@@ -395,6 +395,16 @@ def set_array(np.ndarray[np.int_t, ndim=2] arr,
     return _set_array(<int*>arr.data, arr.shape[0], arr.shape[1],
                       c, value, mode)
 
+cpdef mem_use(ConnectedRegion cr):
+    """Estimate memory usage of the given region.
+
+    """
+    cdef int ptr_size = sizeof(int*)
+    cdef int int_size = sizeof(int)
+    return sizeof(ConnectedRegion) + \
+           len(cr.colptr)*int_size + \
+           len(cr.rowptr)*int_size
+
 # These methods are needed by the lulu decomposition to build
 # connected regions incrementally
 
