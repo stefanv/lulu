@@ -44,7 +44,7 @@ def ICM(data, N, beta):
 
         # How many of the 8-connected neighbouring pixels are in the
         # same cluster?
-        count = np.zeros(data.shape + (4,), dtype=int)
+        count = np.zeros(data.shape + (N,), dtype=int)
         count_inside = count[1:-1, 1:-1, :]
 
         labels_img = labels.reshape(data.shape)
@@ -59,7 +59,7 @@ def ICM(data, N, beta):
             count_inside[..., k] += (k == labels_img[:-2, 2:])
             count_inside[..., k] += (k == labels_img[2:, :-2])
 
-        count = count.reshape((len(labels), 4))
+        count = count.reshape((len(labels), N))
         cluster_measure = (data_flat[:, None] - cluster_means)**2 \
                           - beta * variance * count
         labels = np.argmin(cluster_measure, axis=1)
