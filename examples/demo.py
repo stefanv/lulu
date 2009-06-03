@@ -1,12 +1,34 @@
+"""
+Discrete Pulse Transform / LULU Operator in 2D
+==============================================
+
+Demonstrations
+--------------
+%s
+
+Usage
+-----
+python demoname.py [image]
+
+If no image file is specified, the demonstration will be run
+on Chelsea the Cat.
+"""
+
 __all__ = ['load_image']
+
+from glob import glob
+import os
+
+__doc__ = __doc__ % \
+          '\n'.join(sorted([f[:-3] for f in
+                            glob(os.path.dirname(__file__) + '*.py')
+                            if f != 'demo.py']))
 
 import sys
 sys.path.insert(0, '..')
 
 import numpy as np
 import PIL.Image
-
-import os
 
 def load_image(fname=None):
     """Load example image.
@@ -22,3 +44,6 @@ def load_image(fname=None):
     else:
         img = PIL.Image.open(fname)
     return np.array(img.convert('F')).astype(int)
+
+if __name__ == "__main__":
+    print __doc__
