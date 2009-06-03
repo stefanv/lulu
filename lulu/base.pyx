@@ -206,6 +206,8 @@ cdef list _identify_pulses_and_merges(dict regions, int area, dict pulses,
     return merge_region_positions
 
 def decompose(np.ndarray[np.int_t, ndim=2] img):
+    img = img.copy()
+
     cdef np.ndarray[np.int_t, ndim=2] labels
     cdef dict regions
 
