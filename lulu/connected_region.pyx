@@ -1,5 +1,4 @@
 # -*- python -*-
-
 """
 Notes on file structure: we have a minimal data class,
 ConnectedRegion, that stores the row and column pointers, size and
@@ -10,6 +9,8 @@ size of ConnectedRegion is minimal, since we have to store thousands
 of these objects.
 
 """
+
+__all__ = ['ConnectedRegion']
 
 import lulu.connected_region_handler as crh
 
