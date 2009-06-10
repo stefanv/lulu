@@ -1,4 +1,5 @@
 from lulu.base import *
+from lulu.connected_region import *
 
 import os.path as _path
 _basedir = _path.abspath(_path.join(__file__, '..'))
