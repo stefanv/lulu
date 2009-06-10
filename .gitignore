@@ -4,3 +4,7 @@
 *.c
 build
 lulu/*.html
+dist
+*.egg-info
+*.log
+
