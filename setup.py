@@ -1,4 +1,4 @@
-from setuptools import setup, Extension
+from distutils.core import setup, Extension
 from Cython.Distutils import build_ext
 import numpy
 
@@ -24,7 +24,6 @@ setup(name='lulu',
                    cext('base')],
 
       package_data={'': ['*.txt', '*.png', '*.jpg']},
-      zip_safe=False,
       packages=['lulu', 'lulu.tests'],
 )
 
