@@ -4,6 +4,7 @@ from enthought.traits.ui.api import Item, View, Group, RangeEditor
 from enthought.chaco.api import Plot, ArrayPlotData, PlotLabel, \
                                 HPlotContainer
 
+from _default_override import DefaultOverride
 
 import numpy as np
 
@@ -14,15 +15,17 @@ class Viewer(HasTraits):
 
     # Thresholds are defined in __init__
 
+    no_label = DefaultOverride(low_label='', high_label='', mode='slider')
+
     traits_view = View(Group(Item('reconstruction', editor=ComponentEditor()),
                              show_labels=False,
                              show_left=False),
-                       Item('amplitude_threshold_min'),
-                       Item('amplitude_threshold_max'),
-                       Item('area_threshold_min'),
-                       Item('area_threshold_max'),
-                       Item('volume_threshold_min'),
-                       Item('volume_threshold_max'),
+                       Item('amplitude_threshold_min', editor=no_label),
+                       Item('amplitude_threshold_max', editor=no_label),
+                       Item('area_threshold_min', editor=no_label),
+                       Item('area_threshold_max', editor=no_label),
+                       Item('volume_threshold_min', editor=no_label),
+                       Item('volume_threshold_max', editor=no_label),
 
                        resizable=True,
                        title='DPT 2D reconstruction')
@@ -30,33 +33,21 @@ class Viewer(HasTraits):
     def __init__(self, impulses):
         HasTraits.__init__(self)
 
-        def _slider(low, high):
-            return RangeEditor(low=low, high=high,
-                               high_label='', low_label=' ',
-                               mode='slider')
-
-
         self.add_trait('amplitude_threshold_min',
-                       Range(value=0, low=0, high=10,
-                             editor=_slider(0, 10)))
+                       Range(value=0, low=0, high=10))
         self.add_trait('amplitude_threshold_max',
-                       Range(value=10, low=0, high=10,
-                             editor=_slider(0, 10)))
+                       Range(value=10, low=0, high=10))
 
         max_area = max(impulses.keys())
         self.add_trait('area_threshold_min',
-                       Range(value=0, low=0, high=max_area,
-                             editor=_slider(0, max_area)))
+                       Range(value=0, low=0, high=max_area))
         self.add_trait('area_threshold_max',
-                       Range(value=max_area, low=0, high=max_area,
-                             editor=_slider(0, max_area)))
+                       Range(value=max_area, low=0, high=max_area))
 
         self.add_trait('volume_threshold_min',
-                       Range(value=0, low=0, high=1500,
-                             editor=_slider(0, 1500)))
+                       Range(value=0, low=0, high=1500))
         self.add_trait('volume_threshold_max',
-                       Range(value=1500, low=0, high=1500,
-                             editor=_slider(0, 1500)))
+                       Range(value=1500, low=0, high=1500))
 
     def _reconstruction_default(self):
         index = np.arange(5)
