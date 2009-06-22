@@ -3,7 +3,7 @@ from Cython.Distutils import build_ext
 import numpy
 
 def cext(name):
-    return Extension('%s' % name, ['lulu/%s.pyx' % name],
+    return Extension('lulu.%s' % name, ['lulu/%s.pyx' % name],
                      include_dirs=[numpy.get_include()])
 
 setup(name='lulu',
@@ -23,8 +23,7 @@ setup(name='lulu',
                    cext('ccomp'),
                    cext('base')],
 
-      package_data={'': ['*.txt', '*.png', '*.jpg']},\
+      package_data={'': ['*.txt', '*.png', '*.jpg']},
       packages=['lulu', 'lulu.tests'],
-      package_dir={'': 'lulu'},
 )
 
