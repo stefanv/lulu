@@ -1,5 +1,5 @@
 import sys
-sys.path.extend('..')
+sys.path.append('..')
 
 import numpy as np
 import matplotlib.pyplot as plt
