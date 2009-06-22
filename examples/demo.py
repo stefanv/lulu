@@ -23,7 +23,7 @@ import os
 __doc__ = __doc__ % \
           '\n'.join(sorted([f[:-3] for f in
                             glob(os.path.dirname(__file__) + '*.py')
-                            if f != 'demo.py']))
+                            if f != 'demo.py' and not f.startswith('_')]))
 
 import sys
 sys.path.insert(0, '..')
