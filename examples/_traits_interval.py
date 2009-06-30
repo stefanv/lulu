@@ -12,6 +12,31 @@ from enthought.traits.api import Int, TraitType, Instance, Float
 
 from math import pi
 
+class FixedRangeSelection(RangeSelection):
+    # This is temporary and should be removed as soon as
+    # Chaco has been fixed
+
+    def selecting_button_up(self, event):
+        self.event_state = "selected"
+
+        # Fire the "completed" event
+        self.selection_completed = self.selection
+        return
+
+    def selecting_right_up(self, event):
+        self.selecting_button_up(event)
+
+    def selecting_left_up(self, event):
+        self.selecting_button_up(event)
+
+    def selecting_mouse_enter(self, event):
+        if not (event.right_down or event.left_down):
+            return self.selecting_button_up(event)
+        else:
+            self._set_sizing_cursor(event)
+        return
+
+
 class Interval(TraitType):
     """Trait that represents an interval.
 
@@ -112,7 +137,7 @@ class IntervalEditorImpl(Editor):
         plot.y_mapper.range.high = 1.0
         plot.y_mapper.range.low = 0.0
 
-        range_selection = RangeSelection(plot, left_button_selects=True)
+        range_selection = FixedRangeSelection(plot, left_button_selects=True)
         # Do not allow the user to reset the range
         range_selection.event_state = "selected"
         range_selection.deselect = lambda x: None
