@@ -5,7 +5,8 @@ from enthought.traits.ui.api import Item, View, Group, RangeEditor
 from enthought.chaco.api import Plot, ArrayPlotData, PlotLabel, \
                                 HPlotContainer, gray
 
-from _default_override import DefaultOverride
+#from enthought.traits.ui.api import DefaultOverride
+from _traits_default_override import DefaultOverride
 
 import numpy as np
 
@@ -21,25 +22,23 @@ class Viewer(HasTraits):
 
     image = Array
     result = Array
+    pulses_used = Int
 
     # Thresholds are defined in __init__
 
-    no_endlabel = DefaultOverride(low_label='', high_label='', mode='slider')
+    no_endlabel = DefaultOverride(low_label='', high_label='', mode='logslider')
 
     traits_view = View(Group(Item('reconstruction', editor=ComponentEditor()),
                              show_labels=False,
                              show_left=False),
+                       Item('pulses_used', style='readonly'),
                        Item('amplitude_threshold_min', editor=no_endlabel,
                             label='Minimum absolute amplitude'),
                        Item('amplitude_threshold_max', editor=no_endlabel),
                        Item('area_threshold_min', editor=no_endlabel),
                        Item('area_threshold_max', editor=no_endlabel),
                        Item('volume_threshold_min', editor=no_endlabel),
-                       Item('volume_threshold_max', editor=
-                            DefaultOverride(
-                                low=1, low_label='', high_label='',
-                                mode='logslider')
-                            ),
+                       Item('volume_threshold_max', editor=no_endlabel),
 
                        width=800, height=600,
                        resizable=True,
@@ -53,6 +52,7 @@ class Viewer(HasTraits):
         amplitudes = []
         volumes = []
         for area in areas:
+            self.pulses_used += len(self.pulses[area])
             for cr in self.pulses[area]:
                 value = abs(crh.get_value(cr))
                 amplitudes.append(value)
@@ -63,20 +63,20 @@ class Viewer(HasTraits):
         max_area = max(areas)
 
         self.add_trait('amplitude_threshold_min',
-                       Range(value=0, low=0, high=max_amplitude)),
+                       Range(value=1, low=1, high=max_amplitude)),
         self.add_trait('amplitude_threshold_max',
-                       Range(value=max_amplitude, low=0, high=max_amplitude))
+                       Range(value=max_amplitude, low=1, high=max_amplitude))
 
         max_area = max(pulses.keys())
         self.add_trait('area_threshold_min',
-                       Range(value=0, low=0, high=max_area))
+                       Range(value=1, low=1, high=max_area))
         self.add_trait('area_threshold_max',
-                       Range(value=max_area, low=0, high=max_area))
+                       Range(value=max_area, low=1, high=max_area))
 
         self.add_trait('volume_threshold_min',
-                       Range(value=0, low=0, high=max_volume))
+                       Range(value=1, low=1, high=max_volume))
         self.add_trait('volume_threshold_max',
-                       Range(value=max_volume, low=0, high=max_volume))
+                       Range(value=max_volume, low=1, high=max_volume))
 
         self.result = self.image
 
@@ -108,17 +108,18 @@ class Viewer(HasTraits):
                      'area_threshold_min, area_threshold_max')
     def reconstruct(self):
         self.result.fill(0)
+        pulses = 0
 
         # Reconstruct only from pulses inside the thresholds
         for area in self.pulses.keys():
-            if area <= self.area_threshold_min or \
+            if area < self.area_threshold_min or \
                area > self.area_threshold_max:
                 continue
 
             for cr in self.pulses[area]:
                 value = crh.get_value(cr)
                 aval = abs(value)
-                if aval <= self.amplitude_threshold_min or \
+                if aval < self.amplitude_threshold_min or \
                    aval > self.amplitude_threshold_max:
                     continue
 
@@ -128,6 +129,9 @@ class Viewer(HasTraits):
                     continue
 
                 crh.set_array(self.result, cr, value, 'add')
+                pulses += 1
+
+        self.pulses_used = pulses
 
         self.plot_data.set_data('reconstruction', self.result)
         self.new.request_redraw()
