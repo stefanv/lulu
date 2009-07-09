@@ -142,9 +142,8 @@ cdef _merge_all(list merge_region_positions, dict regions, dict area_histogram,
 
 cdef list _identify_pulses_and_merges(dict regions, int area, dict pulses,
                                       int* img_data, int rows, int cols,
-                                      mode=0):
-    """Return pulses that need to be removed, as well as the
-    positions of areas that requires merging after the removal.
+                                      int mode=0):
+    """Return positions of areas that need to be merged after the removal.
 
     Parameters
     ----------
@@ -158,6 +157,7 @@ cdef list _identify_pulses_and_merges(dict regions, int area, dict pulses,
 
     cdef int b_max = cr._value
     cdef int b_min = cr._value
+    cdef int old_value
 
     cdef list merge_region_positions = []
 
