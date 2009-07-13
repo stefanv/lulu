@@ -53,7 +53,7 @@ def connected_regions(np.ndarray[np.int_t, ndim=2] img):
             else:
                 cur_label = prev_label
 
-            # Different region?
+            # Different region or end of row reached
             if prev_label != cur_label or c == columns:
 
                 # New region?
@@ -218,6 +218,8 @@ def decompose(np.ndarray[np.int_t, ndim=2] img):
     cdef int max_rows = img.shape[0]
     cdef int max_cols = img.shape[1]
 
+    # labels (array): `img`, numbered according to connected region
+    # regions (dict): ConnectedRegions, indexed by label value.
     labels, regions = connected_regions(img)
     cdef int* labels_data = <int*>labels.data
 
@@ -295,8 +297,6 @@ def reconstruct(dict regions, tuple shape, int min_area=-1, int max_area=-1):
         Pulses with these areas occur in the image.
     area_count : 1d ndarray
         For each area in the above list, there are this many impulses.
-    pulses : int
-        Total number of impulses in the image.
 
     """
     cdef ConnectedRegion cr
@@ -309,26 +309,26 @@ def reconstruct(dict regions, tuple shape, int min_area=-1, int max_area=-1):
     if min_area == -1:
         min_area = 0
 
-    cdef int pulses = 0
+    cdef list areas = []
     cdef list area_count = []
     cdef int a
 
     for a in regions:
-        area_count.append(0)
-
         if a >= min_area and a <= max_area:
-            pulses += len(regions[a])
+            areas.append(a)
+            area_count.append(0)
+
+            area_count[-1] += len(regions[a])
 
             for cr in regions[a]:
-                area_count[-1] += 1
                 crh._set_array(<int*>out.data, out.shape[0], out.shape[1],
                                cr, cr._value, 1)
 
-    areas, area_count_arr = np.array(regions.keys()), np.array(area_count)
+    areas_arr, area_count_arr = np.array(areas), np.array(area_count)
 
     # Sort by area
-    ind = np.argsort(areas)
-    areas = areas[ind]
+    ind = np.argsort(areas_arr)
+    areas_arr = areas_arr[ind]
     area_count_arr = area_count_arr[ind]
 
-    return out, areas, area_count_arr, pulses
+    return out, areas, area_count_arr

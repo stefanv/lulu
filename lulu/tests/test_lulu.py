@@ -45,3 +45,11 @@ class TestLULU:
                             [0, 2, 2, 2, 0],
                             [0, 0, 0, 0, 0],
                             [0, 0, 0, 0, 0]])
+
+class TestReconstruction:
+    img = np.random.random((10, 10)).astype(int)
+
+    pulses = lulu.decompose(img)
+    img_, areas, area_count = lulu.reconstruct(pulses, img.shape)
+
+    assert_array_equal(img, img_)

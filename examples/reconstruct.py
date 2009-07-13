@@ -12,7 +12,6 @@ import time
 import lulu
 import lulu.connected_region_handler as crh
 
-N = 300
 img = load_image()
 
 print "Decomposing a %s matrix." % str(img.shape)
@@ -37,9 +36,9 @@ def memory_use(regions):
 
 print "-"*78
 print "Reconstructing image...",
-out, areas, area_count, pulses = lulu.reconstruct(regions, img.shape)
+out, areas, area_count = lulu.reconstruct(regions, img.shape)
 print "done."
-print "Reconstructed from %d pulses." % pulses
+print "Reconstructed from %d pulses." % sum(area_count)
 print "Estimated memory use: %d bytes" % memory_use(regions)
 print "-"*78
 
@@ -48,7 +47,7 @@ plt.imshow(img, interpolation='nearest', cmap=plt.cm.gray)
 plt.title('Original')
 plt.subplot(2, 2, 2)
 plt.imshow(out, interpolation='nearest', cmap=plt.cm.gray)
-plt.title('Reconstruction (%d pulses)' % pulses)
+plt.title('Reconstruction (%d pulses)' % sum(area_count))
 
 plt.subplot(2, 2, 4)
 s = np.cumsum(area_count)
@@ -59,7 +58,7 @@ plt.plot([areas[ind]], [area_count[ind]], 'r.', markersize=10)
 areas = areas[:ind*3]
 area_count = area_count[:ind*3]
 
-plt.fill_between(areas[ind:], area_count[ind:], alpha=0.3)
+#plt.fill_between(areas[ind:], area_count[ind:], alpha=0.3)
 
 plt.plot(areas, area_count)
 plt.xlabel('Pulse Area')
@@ -68,10 +67,10 @@ plt.title('Histogram of Pulse Areas (up to area %d)' % (ind*3))
 
 print "-"*78
 print "Thresholded reconstruction...",
-out, areas, area_count, pulses = \
+out, areas, area_count = \
      lulu.reconstruct(regions, img.shape, min_area=areas[ind])
 print "done."
-print "Reconstructed from %d pulses." % pulses
+print "Reconstructed from %d pulses." % sum(area_count)
 
 for area in regions:
     if area < areas[ind]:
@@ -83,7 +82,8 @@ print "-"*78
 
 plt.subplot(2, 2, 3)
 plt.imshow(out, interpolation='nearest', cmap=plt.cm.gray)
-plt.title('Reconstruction with areas >= %d (%d pulses)' % (areas[ind], pulses))
+plt.title('Reconstruction with areas >= %d (%d pulses)' % \
+          (areas[ind], sum(area_count)))
 
 plt.suptitle('2D LULU Reconstruction')
 plt.show()
