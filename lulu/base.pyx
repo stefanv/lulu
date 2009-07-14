@@ -190,6 +190,11 @@ cdef list _identify_pulses_and_merges(dict regions, int area, dict pulses,
 
         # Minimal or maximal region detected
         if cr._value != old_value:
+            # This should occur exactly once: on the last
+            # pulse that covers the whole image
+            if cr._value == -1:
+                cr._value = 0
+
             crh._set_array(img_data, rows, cols, cr, cr._value)
 
             cr_save = crh.copy(cr)
