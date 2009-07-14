@@ -1,7 +1,7 @@
 from enthought.enable.api import Component, ComponentEditor
 from enthought.traits.api import HasTraits, Instance, Array, Int, Range, \
-                                 on_trait_change, Dict
-from enthought.traits.ui.api import Item, View, Group, RangeEditor
+                                 on_trait_change, Dict, Bool
+from enthought.traits.ui.api import Item, View, Group, HGroup, RangeEditor
 from enthought.chaco.api import Plot, ArrayPlotData, PlotLabel, \
                                 HPlotContainer, gray
 
@@ -23,6 +23,7 @@ class Viewer(HasTraits):
     image = Array
     result = Array
     pulses_used = Int
+    absolute_sum = Bool(False)
 
     # Thresholds are defined in __init__
 
@@ -31,7 +32,8 @@ class Viewer(HasTraits):
     traits_view = View(Group(Item('reconstruction', editor=ComponentEditor()),
                              show_labels=False,
                              show_left=False),
-                       Item('pulses_used', style='readonly'),
+                       HGroup(Item('pulses_used', style='readonly'),
+                              Item('absolute_sum')),
                        Item('amplitude_threshold_min', editor=no_endlabel,
                             label='Minimum absolute amplitude'),
                        Item('amplitude_threshold_max', editor=no_endlabel),
@@ -39,6 +41,8 @@ class Viewer(HasTraits):
                        Item('area_threshold_max', editor=no_endlabel),
                        Item('volume_threshold_min', editor=no_endlabel),
                        Item('volume_threshold_max', editor=no_endlabel),
+                       Item('rectangularity_min'),
+                       Item('rectangularity_max'),
 
                        width=800, height=600,
                        resizable=True,
@@ -78,6 +82,11 @@ class Viewer(HasTraits):
         self.add_trait('volume_threshold_max',
                        Range(value=max_volume, low=1, high=max_volume))
 
+        self.add_trait('rectangularity_min',
+                       Range(value=0, low=0, high=1.0))
+        self.add_trait('rectangularity_max',
+                       Range(value=1, low=0, high=1.0))
+
         self.result = self.image
 
     def _reconstruction_default(self):
@@ -105,7 +114,9 @@ class Viewer(HasTraits):
 
     @on_trait_change('amplitude_threshold_min, amplitude_threshold_max,'
                      'volume_threshold_min, volume_threshold_max,'
-                     'area_threshold_min, area_threshold_max')
+                     'area_threshold_min, area_threshold_max,'
+                     'rectangularity_min, rectangularity_max,'
+                     'absolute_sum')
     def reconstruct(self):
         self.result.fill(0)
         pulses = 0
@@ -127,6 +138,27 @@ class Viewer(HasTraits):
                 if volume <= self.volume_threshold_min or \
                    volume > self.volume_threshold_max:
                     continue
+
+                # See:
+                #
+                # Measuring rectangularity by Paul L. Rosin
+                # Machine Vision and Applications, Vol 11, No 4, December 1999
+                # http://www.springerlink.com/content/xb9klcax8ytnwth1/
+                #
+                # for more information on computing rectangularity.
+                #
+                r0, c0, r1, c1 = crh.bounding_box(cr)
+                if c0 == c1 or r0 == r1:
+                    rectangularity = 1
+                else:
+                    rectangularity = area / float((c1 - c0) * (r1 - r0))
+
+                if rectangularity < self.rectangularity_min or \
+                   rectangularity > self.rectangularity_max:
+                    continue
+
+                if self.absolute_sum:
+                    value = aval
 
                 crh.set_array(self.result, cr, value, 'add')
                 pulses += 1
