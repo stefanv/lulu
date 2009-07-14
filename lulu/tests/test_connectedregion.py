@@ -169,3 +169,7 @@ class TestConnectedRegion:
         crh.set_array(x, self.c, 5)
         crh.set_array(x, self.c, 5, 'add')
         assert_array_equal(x, self.dense * 5 * 2)
+
+    def test_bounding_box(self):
+        assert_equal(crh.bounding_box(self.c),
+                     (1, 0, 3, 4))

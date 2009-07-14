@@ -22,6 +22,7 @@ cpdef merge(ConnectedRegion, ConnectedRegion)
 cdef _set_array(int* arr, int rows, int cols, ConnectedRegion c,
                 int value, int mode=?)
 cpdef mem_use(ConnectedRegion cr)
+cpdef bounding_box(ConnectedRegion cr)
 
 # Useful functions
 cdef inline int min2(int a, int b)

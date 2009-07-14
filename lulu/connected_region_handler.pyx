@@ -410,6 +410,10 @@ cpdef mem_use(ConnectedRegion cr):
            len(cr.colptr)*int_size + \
            len(cr.rowptr)*int_size
 
+cpdef bounding_box(ConnectedRegion cr):
+    return (cr._start_row, min(cr.colptr),
+            cr._start_row + len(cr.rowptr) - 2, max(cr.colptr) - 1)
+
 # These methods are needed by the lulu decomposition to build
 # connected regions incrementally
 
