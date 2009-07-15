@@ -22,8 +22,10 @@ class Viewer(HasTraits):
 
     image = Array
     result = Array
+    lifetimes = Array
     pulses_used = Int
     absolute_sum = Bool(False)
+    amplitudes_one = Bool(False)
 
     # Thresholds are defined in __init__
 
@@ -33,7 +35,8 @@ class Viewer(HasTraits):
                              show_labels=False,
                              show_left=False),
                        HGroup(Item('pulses_used', style='readonly'),
-                              Item('absolute_sum')),
+                              Item('absolute_sum'),
+                              Item('amplitudes_one')),
                        Item('amplitude_threshold_min', editor=no_endlabel,
                             label='Minimum absolute amplitude'),
                        Item('amplitude_threshold_max', editor=no_endlabel),
@@ -43,6 +46,7 @@ class Viewer(HasTraits):
                        Item('volume_threshold_max', editor=no_endlabel),
                        Item('rectangularity_min'),
                        Item('rectangularity_max'),
+                       Item('lifetime_max'),
 
                        width=800, height=600,
                        resizable=True,
@@ -87,7 +91,10 @@ class Viewer(HasTraits):
         self.add_trait('rectangularity_max',
                        Range(value=1, low=0, high=1.0))
 
-        self.result = self.image
+        self.add_trait('lifetime_max',
+                       Range(value=100, low=0, high=100))
+
+        self.result = self.image.copy()
 
     def _reconstruction_default(self):
         self.plot_data = ArrayPlotData(original=self.image,
@@ -110,19 +117,32 @@ class Viewer(HasTraits):
         container.add(old)
         container.add(self.new)
 
+        # Calculate lifetimes
+        life_starts = np.zeros_like(self.image)
+        for area in reversed(sorted(self.pulses.keys())):
+            for cr in self.pulses[area]:
+                crh.set_array(life_starts, cr, area)
+
+        life_ends = np.zeros_like(self.image)
+        for area in sorted(self.pulses.keys()):
+            for cr in self.pulses[area]:
+                crh.set_array(life_ends, cr, area)
+
+        self.lifetimes = life_ends - life_starts
+
         return container
 
     @on_trait_change('amplitude_threshold_min, amplitude_threshold_max,'
                      'volume_threshold_min, volume_threshold_max,'
                      'area_threshold_min, area_threshold_max,'
                      'rectangularity_min, rectangularity_max,'
-                     'absolute_sum')
+                     'absolute_sum, amplitudes_one, lifetime_max')
     def reconstruct(self):
         self.result.fill(0)
         pulses = 0
 
         # Reconstruct only from pulses inside the thresholds
-        for area in self.pulses.keys():
+        for area in sorted(self.pulses.keys()):
             if area < self.area_threshold_min or \
                area > self.area_threshold_max:
                 continue
@@ -160,8 +180,16 @@ class Viewer(HasTraits):
                 if self.absolute_sum:
                     value = aval
 
+                if self.amplitudes_one:
+                    value = 1
+
                 crh.set_array(self.result, cr, value, 'add')
+
                 pulses += 1
+
+        life_threshold = self.lifetime_max/100. * self.lifetimes.max()
+        mask = (self.lifetimes > life_threshold)
+        self.result[mask] = 0
 
         self.pulses_used = pulses
 
