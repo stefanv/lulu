@@ -39,5 +39,8 @@ plt.ylabel('Pulse volume')
 
 plt.subplot(1, 3, 3)
 plt.plot(areas[:-10], cumulative_volume[:-10], 'x-')
+plt.title('Removed Volume Proportions')
+plt.xlabel('Area')
+plt.ylabel('Proportion of Removed Volume')
 
 plt.show()
