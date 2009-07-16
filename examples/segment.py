@@ -1,7 +1,7 @@
 # ----- Segmentation parameters -----
 N = 4
 beta = 1.5 # Smoothing
-min_area = 100
+min_area = 500
 # -----------------------------------
 
 from demo import load_image
