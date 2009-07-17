@@ -15,13 +15,46 @@ from demo import load_image
 import lulu
 import lulu.connected_region_handler as crh
 
-class Viewer(HasTraits):
-    pulses = Dict
-    pulses_used = Int
+class BaseViewer(HasTraits):
     reconstruction = Instance(Component)
-
     image = Array
     result = Array
+
+    def __init__(self, **kwargs):
+        HasTraits.__init__(self, **kwargs)
+
+    def _reconstruction_default(self):
+        self.plot_data = ArrayPlotData(original=self.image,
+                                       reconstruction=self.result)
+
+        rows, cols = self.image.shape[:2]
+        aspect = cols/float(rows)
+
+        old = Plot(self.plot_data)
+        old.img_plot('original', colormap=gray, origin='top left')
+        old.title = 'Old'
+        old.aspect_ratio = aspect
+
+        self.new = Plot(self.plot_data)
+        self.new.img_plot('reconstruction', colormap=gray, origin='top left')
+        self.new.title = 'New'
+        self.new.aspect_ratio = aspect
+
+        container = HPlotContainer(bgcolor='none')
+        container.add(old)
+        container.add(self.new)
+
+        return container
+
+    def update_plot(self):
+        self.plot_data.set_data('reconstruction', self.result)
+        self.new.request_redraw()
+
+
+class Viewer(BaseViewer):
+    pulses = Dict
+    pulses_used = Int
+
     lifetimes = Array
     pulses_used = Int
     absolute_sum = Bool(False)
@@ -31,31 +64,38 @@ class Viewer(HasTraits):
 
     # Thresholds are defined in __init__
 
-    no_endlabel = DefaultOverride(low_label='', high_label='', mode='logslider')
+    def default_traits_view(self):
+        no_endlabel = DefaultOverride(low_label='', high_label='',
+                                      mode='logslider')
+        no_endlabel_linear = DefaultOverride(low_label='', high_label='',
+                                             mode='slider')
 
-    traits_view = View(Group(Item('reconstruction', editor=ComponentEditor()),
-                             show_labels=False,
-                             show_left=False),
-                       HGroup(Item('pulses_used', style='readonly'),
-                              Item('absolute_sum'),
-                              Item('amplitudes_one')),
-                       Item('amplitude_threshold_min', editor=no_endlabel,
-                            label='Minimum absolute amplitude'),
-                       Item('amplitude_threshold_max', editor=no_endlabel),
-                       Item('area_threshold_min', editor=no_endlabel),
-                       Item('area_threshold_max', editor=no_endlabel),
-                       Item('volume_threshold_min', editor=no_endlabel),
-                       Item('volume_threshold_max', editor=no_endlabel),
-                       Item('rectangularity_min'),
-                       Item('rectangularity_max'),
-                       Item('lifetime_max'),
+        return View(Group(Item('reconstruction', editor=ComponentEditor()),
+                          show_labels=False,
+                          show_left=False),
+                    HGroup(Item('pulses_used', style='readonly'),
+                           Item('absolute_sum'),
+                           Item('amplitudes_one'),
+                           Item('replace'),
+                           Item('subtract')),
+                    Item('amplitude_threshold_min', editor=no_endlabel,
+                         label='Minimum absolute amplitude'),
+                    Item('amplitude_threshold_max', editor=no_endlabel),
+                    Item('area_threshold_min', editor=no_endlabel),
+                    Item('area_threshold_max', editor=no_endlabel),
+                    Item('volume_threshold_min', editor=no_endlabel),
+                    Item('volume_threshold_max', editor=no_endlabel),
+                    Item('rectangularity_min'),
+                    Item('rectangularity_max'),
+                    Item('lifetime_min', editor=no_endlabel_linear),
+                    Item('lifetime_max', editor=no_endlabel_linear),
 
-                       width=800, height=600,
-                       resizable=True,
-                       title='DPT 2D reconstruction')
+                    width=800, height=600,
+                    resizable=True,
+                    title='DPT 2D reconstruction')
 
     def __init__(self, **kwargs):
-        HasTraits.__init__(self, **kwargs)
+        BaseViewer.__init__(self, **kwargs)
 
         # Calculate maximum amplitude, area and volume
         areas = self.pulses.keys()
@@ -106,52 +146,23 @@ class Viewer(HasTraits):
         self.add_trait('rectangularity_max',
                        Range(value=1, low=0, high=1.0))
 
+        self.add_trait('lifetime_min',
+                       Range(value=int(self.lifetimes.min()),
+                             low=int(self.lifetimes.min()),
+                             high=int(self.lifetimes.max())))
         self.add_trait('lifetime_max',
-                       Range(value=100, low=0, high=100))
+                       Range(value=int(self.lifetimes.max()),
+                             low=int(self.lifetimes.min()),
+                             high=int(self.lifetimes.max())))
 
         self.result = self.image.copy()
-
-    def _reconstruction_default(self):
-        self.plot_data = ArrayPlotData(original=self.image,
-                                       reconstruction=self.result)
-
-        rows, cols = self.image.shape[:2]
-        aspect = cols/float(rows)
-
-        old = Plot(self.plot_data)
-        old.img_plot('original', colormap=gray, origin='top left')
-        old.title = 'Old'
-        old.aspect_ratio = aspect
-
-        self.new = Plot(self.plot_data)
-        self.new.img_plot('reconstruction', colormap=gray, origin='top left')
-        self.new.title = 'New'
-        self.new.aspect_ratio = aspect
-
-        container = HPlotContainer(bgcolor='none')
-        container.add(old)
-        container.add(self.new)
-
-        # Calculate lifetimes
-        life_starts = np.zeros_like(self.image)
-        for area in reversed(sorted(self.pulses.keys())):
-            for cr in self.pulses[area]:
-                crh.set_array(life_starts, cr, area)
-
-        life_ends = np.zeros_like(self.image)
-        for area in sorted(self.pulses.keys()):
-            for cr in self.pulses[area]:
-                crh.set_array(life_ends, cr, area)
-
-        self.lifetimes = life_ends - life_starts
-
-        return container
 
     @on_trait_change('amplitude_threshold_min, amplitude_threshold_max,'
                      'volume_threshold_min, volume_threshold_max,'
                      'area_threshold_min, area_threshold_max,'
                      'rectangularity_min, rectangularity_max,'
-                     'absolute_sum, amplitudes_one, lifetime_max')
+                     'absolute_sum, amplitudes_one, lifetime_min,'
+                     'lifetime_max, replace, subtract')
     def reconstruct(self):
         self.result.fill(0)
         pulses = 0
@@ -214,11 +225,11 @@ class Viewer(HasTraits):
 
         self.pulses_used = pulses
 
-        self.plot_data.set_data('reconstruction', self.result)
-        self.new.request_redraw()
+        self.update_plot()
 
-image = load_image()
-pulses = lulu.decompose(image)
+if __name__ == "__main__":
+    image = load_image()
+    pulses = lulu.decompose(image)
 
-viewer = Viewer(pulses=pulses, image=image)
-viewer.configure_traits()
+    viewer = Viewer(pulses=pulses, image=image)
+    viewer.configure_traits()
