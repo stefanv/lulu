@@ -26,6 +26,8 @@ class Viewer(HasTraits):
     pulses_used = Int
     absolute_sum = Bool(False)
     amplitudes_one = Bool(False)
+    replace = Bool(False)
+    subtract = Bool(False)
 
     # Thresholds are defined in __init__
 
@@ -183,13 +185,19 @@ class Viewer(HasTraits):
                 if self.amplitudes_one:
                     value = 1
 
-                crh.set_array(self.result, cr, value, 'add')
+                if self.replace:
+                    crh.set_array(self.result, cr, value)
+                else:
+                    crh.set_array(self.result, cr, value, 'add')
 
                 pulses += 1
 
         life_threshold = self.lifetime_max/100. * self.lifetimes.max()
         mask = (self.lifetimes > life_threshold)
         self.result[mask] = 0
+
+        if self.subtract:
+            self.result = self.image - self.result
 
         self.pulses_used = pulses
 
