@@ -90,7 +90,7 @@ class Viewer(HasTraits):
         self.add_trait('amplitude_threshold_max',
                        Range(value=max_amplitude, low=1, high=max_amplitude))
 
-        max_area = max(pulses.keys())
+        max_area = max(self.pulses.keys())
         self.add_trait('area_threshold_min',
                        Range(value=1, low=1, high=max_area))
         self.add_trait('area_threshold_max',
