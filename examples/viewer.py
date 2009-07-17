@@ -170,7 +170,7 @@ class Viewer(HasTraits):
                     continue
 
                 volume = aval * area
-                if volume <= self.volume_threshold_min or \
+                if volume < self.volume_threshold_min or \
                    volume > self.volume_threshold_max:
                     continue
 
