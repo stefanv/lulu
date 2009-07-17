@@ -171,7 +171,7 @@ class Viewer(HasTraits):
                 if c0 == c1 or r0 == r1:
                     rectangularity = 1
                 else:
-                    rectangularity = area / float((c1 - c0) * (r1 - r0))
+                    rectangularity = area / float((c1 - c0 + 1) * (r1 - r0 + 1))
 
                 if rectangularity < self.rectangularity_min or \
                    rectangularity > self.rectangularity_max:
