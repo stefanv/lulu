@@ -145,7 +145,7 @@ cpdef outside_boundary(ConnectedRegion cr):
     """
     cdef int i # scanline row-position
     cdef int j # column position in scanline
-    cdef int start, end, k
+    cdef int start, end, k, c
     cdef list x = [], y = []
 
     cdef int rows = len(cr.rowptr) - 1
@@ -158,6 +158,18 @@ cpdef outside_boundary(ConnectedRegion cr):
     cdef int* line_above = <int*>stdlib.malloc(scanline_size)
     cdef int* line = <int*>stdlib.malloc(scanline_size)
     cdef int* line_below = <int*>stdlib.malloc(scanline_size)
+
+    # Optimised case nnz == 1
+    if cr._nnz == 1:
+        r = cr._start_row
+        c = cr.colptr[0]
+
+        x = [c, c-1, c+1, c]
+        y = [r-1, r, r, r+1]
+
+        return y, x
+
+    # For all other cases, follow the scanline approach
 
     for j in range(columns):
         line[j] = 0
