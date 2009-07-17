@@ -72,6 +72,19 @@ class Viewer(HasTraits):
         max_volume = max(volumes)
         max_area = max(areas)
 
+        # Calculate lifetimes
+        life_starts = np.zeros_like(self.image)
+        for area in reversed(sorted(self.pulses.keys())):
+            for cr in self.pulses[area]:
+                crh.set_array(life_starts, cr, area)
+
+        life_ends = np.zeros_like(self.image)
+        for area in sorted(self.pulses.keys()):
+            for cr in self.pulses[area]:
+                crh.set_array(life_ends, cr, area)
+
+        self.lifetimes = life_ends - life_starts
+
         self.add_trait('amplitude_threshold_min',
                        Range(value=1, low=1, high=max_amplitude)),
         self.add_trait('amplitude_threshold_max',
@@ -192,8 +205,8 @@ class Viewer(HasTraits):
 
                 pulses += 1
 
-        life_threshold = self.lifetime_max/100. * self.lifetimes.max()
-        mask = (self.lifetimes > life_threshold)
+        mask = (self.lifetimes > self.lifetime_max) | \
+               (self.lifetimes < self.lifetime_min)
         self.result[mask] = 0
 
         if self.subtract:
