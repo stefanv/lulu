@@ -1,6 +1,12 @@
 from distutils.core import setup, Extension
 from Cython.Distutils import build_ext
 import numpy
+import sys
+
+if sys.version_info[:2] < (2, 6):
+    package_dir = None
+else:
+    package_dir = {'lulu': ''}
 
 def cext(name):
     return Extension('lulu.%s' % name, ['lulu/%s.pyx' % name],
@@ -25,5 +31,7 @@ setup(name='lulu',
 
       package_data={'': ['*.txt', '*.png', '*.jpg']},
       packages=['lulu', 'lulu.tests'],
+      package_dir=package_dir,
 )
+
 
