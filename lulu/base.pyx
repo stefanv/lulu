@@ -211,6 +211,23 @@ cdef list _identify_pulses_and_merges(dict regions, int area, dict pulses,
     return merge_region_positions
 
 def decompose(np.ndarray[np.int_t, ndim=2] img):
+    """Decompose a two-dimensional signal into pulses.
+
+    Parameters
+    ----------
+    img : 2-D ndarray of ints
+        Input signal.
+
+    Returns
+    -------
+    pulses : dict
+        Dictionary of ConnectedRegion objects, indexed by pulse area.
+
+    See Also
+    --------
+    reconstruct
+
+    """
     img = img.copy()
 
     cdef np.ndarray[np.int_t, ndim=2] labels
