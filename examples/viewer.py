@@ -1,6 +1,6 @@
 from enthought.enable.api import Component, ComponentEditor
 from enthought.traits.api import HasTraits, Instance, Array, Int, Range, \
-                                 on_trait_change, Dict, Bool
+                                 on_trait_change, Dict, Bool, File, Button
 from enthought.traits.ui.api import Item, View, Group, HGroup, RangeEditor
 from enthought.chaco.api import Plot, ArrayPlotData, PlotLabel, \
                                 HPlotContainer, gray
@@ -19,6 +19,8 @@ class BaseViewer(HasTraits):
     reconstruction = Instance(Component)
     image = Array
     result = Array
+    save_file = File(exists=False, auto_set=False, enter_set=True)
+    save_button = Button('Save Result as .npy')
 
     def __init__(self, **kwargs):
         HasTraits.__init__(self, **kwargs)
@@ -49,6 +51,12 @@ class BaseViewer(HasTraits):
     def update_plot(self):
         self.plot_data.set_data('reconstruction', self.result)
         self.new.request_redraw()
+
+    def _save_button_changed(self):
+        try:
+            np.save(self.save_file, self.result)
+        except IOError, e:
+            message('Could not save file: %s' % str(e))
 
 
 class Viewer(BaseViewer):
@@ -89,6 +97,10 @@ class Viewer(BaseViewer):
                     Item('rectangularity_max'),
                     Item('lifetime_min', editor=no_endlabel_linear),
                     Item('lifetime_max', editor=no_endlabel_linear),
+
+                    Group(Item('save_file', show_label=False),
+                          Item('save_button',
+                          show_label=False)),
 
                     width=800, height=600,
                     resizable=True,
