@@ -6,7 +6,7 @@ import sys
 if sys.version_info[:2] < (2, 6):
     package_dir = None
 else:
-    package_dir = {'lulu': ''}
+    package_dir = {'lulu': 'lulu'}
 
 def cext(name):
     return Extension('lulu.%s' % name, ['lulu/%s.pyx' % name],
