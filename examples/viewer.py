@@ -98,9 +98,9 @@ class Viewer(BaseViewer):
                     Item('lifetime_min', editor=no_endlabel_linear),
                     Item('lifetime_max', editor=no_endlabel_linear),
 
-                    Group(Item('save_file', show_label=False),
-                          Item('save_button',
-                          show_label=False)),
+                    HGroup(Item('save_file', show_label=False),
+                           Item('save_button', show_label=False)
+                          ),
 
                     width=800, height=600,
                     resizable=True,

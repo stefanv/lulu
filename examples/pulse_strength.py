@@ -21,8 +21,6 @@ import numpy as np
 
 class StrengthViewer(BaseViewer):
     pulse_strength = Array
-    save_file = File(exists=False, auto_set=False, enter_set=True)
-    save_button = Button('Save Result as .npy')
 
     def default_traits_view(self):
         return View(Group(Item('reconstruction', editor=ComponentEditor()),
@@ -36,12 +34,6 @@ class StrengthViewer(BaseViewer):
                     width=800, height=600,
                     resizable=True,
                     title='DPT 2D reconstruction')
-
-    def _save_button_changed(self):
-        try:
-            np.save(self.save_file, self.result)
-        except IOError, e:
-            message('Could not save file: %s' % str(e))
 
     def __init__(self, **kwargs):
         HasTraits.__init__(self, **kwargs)
