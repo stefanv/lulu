@@ -242,7 +242,7 @@ cdef inline int gt(int a, int b):
 cdef inline int lt(int a, int b):
     return a < b
 
-cdef int _boundary_extremum(ConnectedRegion cr, int* img,
+cdef int _boundary_extremum(ConnectedRegion cr, np.int_t* img,
                             int max_rows, int max_cols,
                             int (*func)(int, int),
                             int initial_extremum = 0):
@@ -283,19 +283,21 @@ cdef int _boundary_extremum(ConnectedRegion cr, int* img,
 
     return extremum
 
-cdef int _boundary_maximum(ConnectedRegion cr, int* img,
+cdef int _boundary_maximum(ConnectedRegion cr, np.int_t* img,
                            int max_rows, int max_cols):
     return _boundary_extremum(cr, img, max_rows, max_cols, gt, -1)
 
-cdef int _boundary_minimum(ConnectedRegion cr, int* img,
+cdef int _boundary_minimum(ConnectedRegion cr, np.int_t* img,
                            int max_rows, int max_cols):
     return _boundary_extremum(cr, img, max_rows, max_cols, lt, 256)
 
 def boundary_maximum(ConnectedRegion cr, np.ndarray[np.int_t, ndim=2] img):
-    return _boundary_maximum(cr, <int*>img.data, img.shape[0], img.shape[1])
+    return _boundary_maximum(cr, <np.int_t*>img.data,
+                             img.shape[0], img.shape[1])
 
 def boundary_minimum(ConnectedRegion cr, np.ndarray[np.int_t, ndim=2] img):
-    return _boundary_minimum(cr, <int*>img.data, img.shape[0], img.shape[1])
+    return _boundary_minimum(cr, <np.int_t*>img.data,
+                             img.shape[0], img.shape[1])
 
 
 cdef inline int min2(int a, int b):
@@ -374,7 +376,7 @@ cpdef merge(ConnectedRegion a, ConnectedRegion b):
     a._start_row = start_row
     reshape(a)
 
-cdef _set_array(int* arr, int rows, int cols,
+cdef _set_array(np.int_t* arr, int rows, int cols,
                 ConnectedRegion cr, int value,
                 int mode=0):
     """Set the value of arr over the connected region.
@@ -409,7 +411,7 @@ def set_array(np.ndarray[np.int_t, ndim=2] arr,
     if mode == 'add':
         add_mode = 1
 
-    return _set_array(<int*>arr.data, arr.shape[0], arr.shape[1],
+    return _set_array(<np.int_t*>arr.data, arr.shape[0], arr.shape[1],
                       c, value, add_mode)
 
 cpdef mem_use(ConnectedRegion cr):

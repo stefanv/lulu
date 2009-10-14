@@ -83,7 +83,7 @@ def connected_regions(np.ndarray[np.int_t, ndim=2] img):
     return labels, regions
 
 cdef _merge_all(list merge_region_positions, dict regions, dict area_histogram,
-                int* image, int* labels, int rows, int cols):
+                np.int_t* image, np.int_t* labels, int rows, int cols):
     """
     Merge all regions that have connections on their boundaries.
 
@@ -141,7 +141,7 @@ cdef _merge_all(list merge_region_positions, dict regions, dict area_histogram,
                 cr._nnz = new_area
 
 cdef list _identify_pulses_and_merges(dict regions, int area, dict pulses,
-                                      int* img_data, int rows, int cols,
+                                      np.int_t* img_data, int rows, int cols,
                                       int mode=0):
     """Return positions of areas that need to be merged after the removal.
 
@@ -236,14 +236,14 @@ def decompose(np.ndarray[np.int_t, ndim=2] img):
     cdef ConnectedRegion cr
     cdef int nz
 
-    cdef int* img_data = <int*>img.data
+    cdef np.int_t* img_data = <np.int_t*>img.data
     cdef int max_rows = img.shape[0]
     cdef int max_cols = img.shape[1]
 
     # labels (array): `img`, numbered according to connected region
     # regions (dict): ConnectedRegions, indexed by label value.
     labels, regions = connected_regions(img)
-    cdef int* labels_data = <int*>labels.data
+    cdef np.int_t* labels_data = <np.int_t*>labels.data
 
     cdef list merge_region_positions
 
@@ -343,7 +343,7 @@ def reconstruct(dict regions, tuple shape, int min_area=-1, int max_area=-1):
             area_count[-1] += len(regions[a])
 
             for cr in regions[a]:
-                crh._set_array(<int*>out.data, out.shape[0], out.shape[1],
+                crh._set_array(<np.int_t*>out.data, out.shape[0], out.shape[1],
                                cr, cr._value, 1)
 
     areas_arr, area_count_arr = np.array(areas), np.array(area_count)

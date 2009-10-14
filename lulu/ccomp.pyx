@@ -22,21 +22,21 @@ See also:
 DTYPE = np.int
 ctypedef np.int_t DTYPE_t
 
-cdef DTYPE_t find_root(int *work, int n):
+cdef DTYPE_t find_root(np.int_t *work, np.int_t n):
     """Find the root of node n.
 
     """
-    cdef int root = n
+    cdef np.int_t root = n
     while (work[root] < root):
         root = work[root]
     return root
 
-cdef set_root(int *work, int n, int root):
+cdef set_root(np.int_t *work, np.int_t n, np.int_t root):
     """
     Set all nodes on a path to point to new_root.
 
     """
-    cdef int j
+    cdef np.int_t j
     while (work[n] < n):
         j = work[n]
         work[n] = root
@@ -45,12 +45,12 @@ cdef set_root(int *work, int n, int root):
     work[n] = root
 
 
-cdef join_trees(int *work, int n, int m):
+cdef join_trees(np.int_t *work, np.int_t n, np.int_t m):
     """Join two trees containing nodes n and m.
 
     """
-    cdef int root = find_root(work, n)
-    cdef int root_m
+    cdef np.int_t root = find_root(work, n)
+    cdef np.int_t root_m
 
     if (n != m):
         root_m = find_root(work, m)
@@ -67,18 +67,18 @@ def label(np.ndarray[DTYPE_t, ndim=2] input):
     """Label connected regions of an integer array.
 
     """
-    cdef int rows = input.shape[0]
-    cdef int cols = input.shape[1]
+    cdef np.int_t rows = input.shape[0]
+    cdef np.int_t cols = input.shape[1]
 
     cdef np.ndarray[DTYPE_t, ndim=2] data = input.copy()
     cdef np.ndarray[DTYPE_t, ndim=2] work
 
     work = np.arange(data.size, dtype=DTYPE).reshape((rows, cols))
 
-    cdef int *work_p = <int*>work.data
-    cdef int *data_p = <int*>data.data
+    cdef np.int_t *work_p = <np.int_t*>work.data
+    cdef np.int_t *data_p = <np.int_t*>data.data
 
-    cdef int i, j
+    cdef np.int_t i, j
 
     # Initialize the first row
     for j in range(1, cols):
@@ -99,7 +99,7 @@ def label(np.ndarray[DTYPE_t, ndim=2] input):
 
     # Label output
 
-    cdef int ctr = 0
+    cdef np.int_t ctr = 0
     for i in range(rows):
         for j in range(cols):
             if (i*cols + j) == work[i, j]:

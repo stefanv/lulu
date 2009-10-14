@@ -1,6 +1,7 @@
 # -*- python -*-
 
 from connected_region cimport ConnectedRegion
+cimport numpy as np
 
 cdef _iterate_rows(ConnectedRegion cr)
 cpdef int nnz(ConnectedRegion cr)
@@ -16,10 +17,12 @@ cpdef outside_boundary(ConnectedRegion cr)
 cpdef set_value(ConnectedRegion cr, int v)
 cpdef int get_value(ConnectedRegion cr)
 cpdef validate(ConnectedRegion cr)
-cdef int _boundary_maximum(ConnectedRegion cr, int* img, int rows, int cols)
-cdef int _boundary_minimum(ConnectedRegion cr, int* img, int rows, int cols)
+cdef int _boundary_maximum(ConnectedRegion cr, np.int_t* img,
+                           int rows, int cols)
+cdef int _boundary_minimum(ConnectedRegion cr, np.int_t* img,
+                           int rows, int cols)
 cpdef merge(ConnectedRegion, ConnectedRegion)
-cdef _set_array(int* arr, int rows, int cols, ConnectedRegion c,
+cdef _set_array(np.int_t* arr, int rows, int cols, ConnectedRegion c,
                 int value, int mode=?)
 cpdef mem_use(ConnectedRegion cr)
 cpdef bounding_box(ConnectedRegion cr)
