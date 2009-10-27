@@ -242,7 +242,8 @@ cdef inline int gt(int a, int b):
 cdef inline int lt(int a, int b):
     return a < b
 
-cdef int _boundary_extremum(ConnectedRegion cr, np.int_t* img,
+cdef int _boundary_extremum(list boundary_x, list boundary_y,
+                            np.int_t* img,
                             int max_rows, int max_cols,
                             int (*func)(int, int),
                             int initial_extremum = 0):
@@ -251,8 +252,9 @@ cdef int _boundary_extremum(ConnectedRegion cr, np.int_t* img,
 
     Parameters
     ----------
-    cr : ConnectedRegion
-    img : Input image as positive integer array
+    boundary_x, boundary_y : list
+        X and Y coordinates of boundary.
+    img : Input image as integer array
     max_rows, max_cols : int
         Dimensions of img.
     func : callable
@@ -263,16 +265,12 @@ cdef int _boundary_extremum(ConnectedRegion cr, np.int_t* img,
 
     """
     cdef int i, r, c
-    cdef int img_val
+    cdef np.int_t img_val
     cdef int extremum = initial_extremum
 
-    cdef list x, y
-
-    y, x = outside_boundary(cr)
-
-    for i in range(len(y)):
-        r = y[i]
-        c = x[i]
+    for i in range(len(boundary_y)):
+        r = boundary_y[i]
+        c = boundary_x[i]
 
         if r < 0 or r >= max_rows or c < 0 or c >= max_cols:
             continue
@@ -283,20 +281,30 @@ cdef int _boundary_extremum(ConnectedRegion cr, np.int_t* img,
 
     return extremum
 
-cdef int _boundary_maximum(ConnectedRegion cr, np.int_t* img,
+cdef int _boundary_maximum(list boundary_x, list boundary_y,
+                           np.int_t* img,
                            int max_rows, int max_cols):
-    return _boundary_extremum(cr, img, max_rows, max_cols, gt, -1)
+    return _boundary_extremum(boundary_x, boundary_y, img,
+                              max_rows, max_cols, gt, -1)
 
-cdef int _boundary_minimum(ConnectedRegion cr, np.int_t* img,
+cdef int _boundary_minimum(list boundary_x, list boundary_y,
+                           np.int_t* img,
                            int max_rows, int max_cols):
-    return _boundary_extremum(cr, img, max_rows, max_cols, lt, 256)
+    return _boundary_extremum(boundary_x, boundary_y, img,
+                              max_rows, max_cols, lt, 256)
 
-def boundary_maximum(ConnectedRegion cr, np.ndarray[np.int_t, ndim=2] img):
-    return _boundary_maximum(cr, <np.int_t*>img.data,
+def boundary_maximum(ConnectedRegion cr,
+                     np.ndarray[np.int_t, ndim=2] img):
+    cdef list y, x
+    y, x = outside_boundary(cr)
+    return _boundary_maximum(x, y, <np.int_t*>img.data,
                              img.shape[0], img.shape[1])
 
-def boundary_minimum(ConnectedRegion cr, np.ndarray[np.int_t, ndim=2] img):
-    return _boundary_minimum(cr, <np.int_t*>img.data,
+def boundary_minimum(ConnectedRegion cr,
+                     np.ndarray[np.int_t, ndim=2] img):
+    cdef list y, x
+    y, x = outside_boundary(cr)
+    return _boundary_minimum(x, y, <np.int_t*>img.data,
                              img.shape[0], img.shape[1])
 
 

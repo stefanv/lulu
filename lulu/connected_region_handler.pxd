@@ -22,9 +22,11 @@ cpdef ConnectedRegion copy(ConnectedRegion cr)
 cpdef int contains(ConnectedRegion cr, int r, int c)
 cpdef outside_boundary(ConnectedRegion cr)
 cpdef validate(ConnectedRegion cr)
-cdef int _boundary_maximum(ConnectedRegion cr, np.int_t* img,
+cdef int _boundary_maximum(list boundary_x, list boundary_y,
+                           np.int_t* img,
                            int rows, int cols)
-cdef int _boundary_minimum(ConnectedRegion cr, np.int_t* img,
+cdef int _boundary_minimum(list boundary_x, list boundary_y,
+                           np.int_t* img,
                            int rows, int cols)
 cpdef merge(ConnectedRegion, ConnectedRegion)
 cdef _set_array(np.int_t* arr, int rows, int cols, ConnectedRegion c,

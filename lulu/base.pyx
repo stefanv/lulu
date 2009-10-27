@@ -160,6 +160,7 @@ cdef list _identify_pulses_and_merges(dict regions, int area, dict pulses,
     cdef int old_value
 
     cdef list merge_region_positions = []
+    cdef list y, x
 
     if area not in pulses:
         pulses[area] = []
@@ -172,9 +173,11 @@ cdef list _identify_pulses_and_merges(dict regions, int area, dict pulses,
 
         old_value = cr._value
 
+        y, x = crh.outside_boundary(cr)
+
         # Upper
         if mode == 0 or mode == 2:
-            b_min = crh._boundary_minimum(cr, img_data, rows, cols)
+            b_min = crh._boundary_minimum(x, y, img_data, rows, cols)
 
             # Minimal set
             if b_min > old_value:
@@ -182,7 +185,7 @@ cdef list _identify_pulses_and_merges(dict regions, int area, dict pulses,
 
         # Lower
         if mode == 1 or mode == 2:
-            b_max = crh._boundary_maximum(cr, img_data, rows, cols)
+            b_max = crh._boundary_maximum(x, y, img_data, rows, cols)
 
             # Maximal set
             if b_max < old_value:
