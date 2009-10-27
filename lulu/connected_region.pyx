@@ -24,6 +24,9 @@ cdef class ConnectedRegion:
 
     ---00-000-- would be represented as [3, 5, 6, 9]
 
+    This class should be queried using the methods in
+    `connected_region_handler`.
+
     Attributes
     ----------
     rowptr : list of int

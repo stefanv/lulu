@@ -6,16 +6,21 @@ cimport numpy as np
 cdef _iterate_rows(ConnectedRegion cr)
 cpdef int nnz(ConnectedRegion cr)
 
+# getters and setters
 cpdef get_shape(ConnectedRegion cr)
-cdef _minimum_shape(ConnectedRegion cr)
-cpdef reshape(ConnectedRegion cr, shape=?)
-cpdef ConnectedRegion copy(ConnectedRegion cr)
-cpdef set_start_row(ConnectedRegion cr, int start_row)
 cpdef int get_start_row(ConnectedRegion cr)
+cpdef int get_value(ConnectedRegion cr)
+cpdef list get_colptr(ConnectedRegion cr)
+cpdef list get_rowptr(ConnectedRegion cr)
+
+cpdef reshape(ConnectedRegion cr, shape=?)
+cpdef set_start_row(ConnectedRegion cr, int start_row)
+cpdef set_value(ConnectedRegion cr, int v)
+
+cdef _minimum_shape(ConnectedRegion cr)
+cpdef ConnectedRegion copy(ConnectedRegion cr)
 cpdef int contains(ConnectedRegion cr, int r, int c)
 cpdef outside_boundary(ConnectedRegion cr)
-cpdef set_value(ConnectedRegion cr, int v)
-cpdef int get_value(ConnectedRegion cr)
 cpdef validate(ConnectedRegion cr)
 cdef int _boundary_maximum(ConnectedRegion cr, np.int_t* img,
                            int rows, int cols)

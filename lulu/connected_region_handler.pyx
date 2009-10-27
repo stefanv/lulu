@@ -464,3 +464,9 @@ def todense(ConnectedRegion cr):
             out[row, k] = cr._value
 
     return out
+
+cpdef list get_colptr(ConnectedRegion cr):
+    return cr.colptr
+
+cpdef list get_rowptr(ConnectedRegion cr):
+    return cr.rowptr
