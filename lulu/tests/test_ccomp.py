@@ -1,5 +1,5 @@
 import numpy as np
-from numpy.testing import assert_array_equal
+from numpy.testing import assert_array_equal, run_module_suite
 
 from lulu.ccomp import label
 
@@ -29,3 +29,6 @@ class TestConnectedComponents:
         for i in range(n):
             values = x[labels == i]
             assert np.all(values == values[0])
+
+if __name__ == "__main__":
+    run_module_suite()

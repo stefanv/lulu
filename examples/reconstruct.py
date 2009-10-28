@@ -22,18 +22,6 @@ toc = time.time()
 
 print "Execution time: %.2fs" % (toc - tic)
 
-def memory_use(regions):
-    """Estimate the memory use of the given regions.
-
-    """
-    mem = 0
-    for area in regions:
-        for r in regions[area]:
-            mem += crh.mem_use(r)
-
-    return mem
-
-
 print "-"*78
 print "Reconstructing image...",
 out, areas, area_count = lulu.reconstruct(regions, img.shape)
@@ -75,10 +63,6 @@ print "Reconstructed from %d pulses." % sum(area_count)
 for area in regions:
     if area < areas[ind]:
         regions[area] = []
-
-print "Estimated memory use: %d bytes" % memory_use(regions)
-print "-"*78
-
 
 plt.subplot(2, 2, 3)
 plt.imshow(out, interpolation='nearest', cmap=plt.cm.gray)

@@ -13,6 +13,8 @@ of these objects.
 __all__ = ['ConnectedRegion']
 
 import lulu.connected_region_handler as crh
+cimport int_array as iarr
+from int_array cimport IntArray
 
 cdef class ConnectedRegion:
     """
@@ -63,23 +65,20 @@ cdef class ConnectedRegion:
         self._shape = shape
         self._value = value
 
-        if rowptr is None:
-            self.rowptr = []
-        else:
-            self.rowptr = rowptr
-
-        if colptr is None:
-            self.colptr = []
-        else:
-            self.colptr = colptr
-
+        self.rowptr = IntArray()
+        self.colptr = IntArray()
+        iarr.from_list(self.rowptr, rowptr)
+        iarr.from_list(self.colptr, colptr)
         self._start_row = start_row
 
         # Initialise nnz (nr of non-zeros or area of region)
         cdef int i, n
+        cdef int* rp = self.rowptr.buf
+        cdef int* cp = self.colptr.buf
+
         n = 0
-        if len(self.rowptr) != 0:
-            for i in range((self.rowptr[-1] - self.rowptr[0]) / 2):
-                n += self.colptr[2*i + 1] - self.colptr[2*i]
+        if self.rowptr.size != 0:
+            for i in range((rp[self.rowptr.size - 1] - rp[0]) / 2):
+                n += cp[2*i + 1] - cp[2*i]
 
         self._nnz = n

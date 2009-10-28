@@ -3,6 +3,7 @@ import numpy as np
 
 from lulu.connected_region import ConnectedRegion
 import lulu.connected_region_handler as crh
+import lulu.int_array as iarr
 
 class TestConnectedRegion:
     c = ConnectedRegion(shape=(5,5),
@@ -24,9 +25,8 @@ class TestConnectedRegion:
         x = [0, 1]
         c = ConnectedRegion(shape=(1,1), value=1, rowptr=[0, 2], colptr=x)
         d = crh.copy(c)
-        x[1] = 0
 
-        assert crh.todense(d) != crh.todense(c)
+        assert crh.todense(d) == crh.todense(c)
 
     def test_reshape(self):
         d = crh.copy(self.c)
@@ -92,7 +92,6 @@ class TestConnectedRegion:
         assert_equal(crh._current_row(c), 0)
 
         crh._append_colptr(c, 0, 1)
-
         crh._new_row(c)
         assert_equal(crh._current_row(c), 1)
 
@@ -173,3 +172,6 @@ class TestConnectedRegion:
     def test_bounding_box(self):
         assert_equal(crh.bounding_box(self.c),
                      (1, 0, 3, 4))
+
+if __name__ == "__main__":
+    run_module_suite()

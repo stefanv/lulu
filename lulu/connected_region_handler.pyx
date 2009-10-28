@@ -9,6 +9,8 @@ cimport numpy as np
 cimport stdlib
 
 cimport lulu.connected_region_handler as crh
+cimport int_array as iarr
+from int_array cimport IntArray
 
 # Cython does not make it particularly easy to cdef static methods,
 # so we define these methods in their own module so they handle
@@ -22,15 +24,15 @@ cdef _iterate_rows(ConnectedRegion cr):
     Note that this row includes the row offset.
 
     """
-    cdef list rowptr = cr.rowptr
-    cdef list colptr = cr.colptr
+    cdef int* rowptr = cr.rowptr.buf
+    cdef int* colptr = cr.colptr.buf
 
     cdef list out = []
     cdef int r, c, start, end
-    for r in range(len(rowptr) - 1):
+    for r in range(cr.rowptr.size - 1):
         for c in range((rowptr[r + 1] - rowptr[r]) / 2):
-            start = colptr[<int>rowptr[r] + 2*c]
-            end = colptr[<int>rowptr[r] + 2*c + 1]
+            start = colptr[rowptr[r] + 2*c]
+            end = colptr[rowptr[r] + 2*c + 1]
 
             # Cython does not yet support "yield"
             out.append((r + cr._start_row, start, end))
@@ -43,9 +45,13 @@ cpdef int nnz(ConnectedRegion cr):
     """
     cdef int n = 0
     cdef int i
+    cdef int *rowptr, *colptr
 
-    for i in range((cr.rowptr[-1] - cr.rowptr[0]) / 2):
-        n += cr.colptr[2*i + 1] - cr.colptr[2*i]
+    rowptr = cr.rowptr.buf
+    colptr = cr.colptr.buf
+
+    for i in range((rowptr[cr.rowptr.size - 1] - rowptr[0]) / 2):
+        n += colptr[2*i + 1] - colptr[2*i]
 
     return n
 
@@ -56,7 +62,7 @@ cdef _minimum_shape(ConnectedRegion cr):
     """Return the minimum shape into which the connected region can fit.
 
     """
-    return (cr._start_row + len(cr.rowptr) - 1, max(cr.colptr))
+    return (cr._start_row + cr.rowptr.size - 1, iarr.max(cr.colptr))
 
 cpdef reshape(ConnectedRegion cr, shape=None):
     """Set the shape of the connected region.
@@ -75,16 +81,22 @@ cpdef ConnectedRegion copy(ConnectedRegion cr):
     """Return a deep copy of the connected region.
 
     """
-    return ConnectedRegion(shape=cr._shape, value=cr._value,
-                           start_row=cr._start_row,
-                           rowptr=list(cr.rowptr),
-                           colptr=list(cr.colptr))
+    cdef int i
+
+    cdef ConnectedRegion tmp = ConnectedRegion(shape=cr._shape, value=cr._value,
+                                               start_row=cr._start_row)
+    iarr.copy(cr.rowptr, tmp.rowptr)
+    iarr.copy(cr.colptr, tmp.colptr)
+
+    tmp._nnz = crh.nnz(tmp)
+
+    return tmp
 
 cpdef set_start_row(ConnectedRegion cr, int start_row):
     """Set the first row where values occur.
 
     """
-    if start_row <= (cr._shape[0] - len(cr.rowptr) + 1):
+    if start_row <= (cr._shape[0] - cr.rowptr.size + 1):
         cr._start_row = start_row
     else:
         raise ValueError("Start row is too large for the current "
@@ -94,14 +106,17 @@ cpdef int get_start_row(ConnectedRegion cr):
     return cr._start_row
 
 cpdef int contains(ConnectedRegion cr, int r, int c):
-    """Does the connected region contain and element at (r, c)?
+    """Does the connected region contain an element at (r, c)?
 
     """
     cdef i
+    cdef int *colptr, *rowptr
+    colptr = cr.colptr.buf
+    rowptr = cr.rowptr.buf
 
     r -= cr._start_row
 
-    rows = len(cr.rowptr)
+    rows = cr.rowptr.size
 
     if r < 0 or r > rows - 2:
         return False
@@ -109,9 +124,9 @@ cpdef int contains(ConnectedRegion cr, int r, int c):
     if c < 0 or c >= cr._shape[1]:
         return False
 
-    for i in range((cr.rowptr[r + 1] - cr.rowptr[r]) / 2):
-        if (c >= cr.colptr[cr.rowptr[r] + 2*i]) and \
-           (c < cr.colptr[cr.rowptr[r] + 2*i + 1]):
+    for i in range((rowptr[r + 1] - rowptr[r]) / 2):
+        if (c >= colptr[rowptr[r] + 2*i]) and \
+           (c < colptr[rowptr[r] + 2*i + 1]):
             return True
 
     return False
@@ -148,10 +163,13 @@ cpdef outside_boundary(ConnectedRegion cr):
     cdef int start, end, k, c
     cdef list x = [], y = []
 
-    cdef int rows = len(cr.rowptr) - 1
+    cdef int* rowptr = cr.rowptr.buf
+    cdef int* colptr = cr.colptr.buf
 
-    cdef int col_min = min(cr.colptr)
-    cdef int col_max = max(cr.colptr)
+    cdef int rows = cr.rowptr.size - 1
+
+    cdef int col_min = iarr.min(cr.colptr)
+    cdef int col_max = iarr.max(cr.colptr)
     cdef int columns = col_max - col_min
 
     cdef int scanline_size = sizeof(int) * columns
@@ -162,7 +180,7 @@ cpdef outside_boundary(ConnectedRegion cr):
     # Optimised case nnz == 1
     if cr._nnz == 1:
         r = cr._start_row
-        c = cr.colptr[0]
+        c = colptr[0]
 
         x = [c, c-1, c+1, c]
         y = [r-1, r, r, r+1]
@@ -189,9 +207,9 @@ cpdef outside_boundary(ConnectedRegion cr):
 
         # Update line below scanline
         if i < rows:
-            for j in range((cr.rowptr[i + 1] - cr.rowptr[i]) / 2):
-                start = cr.colptr[cr.rowptr[i] + 2*j]
-                end = cr.colptr[cr.rowptr[i] + 2*j + 1]
+            for j in range((rowptr[i + 1] - rowptr[i]) / 2):
+                start = colptr[rowptr[i] + 2*j]
+                end = colptr[rowptr[i] + 2*j + 1]
 
                 for k in range(start - col_min, end - col_min):
                     line_below[k] = 1
@@ -227,19 +245,19 @@ cpdef int get_value(ConnectedRegion cr):
 
 
 cpdef validate(ConnectedRegion cr):
-    if cr.rowptr[-1] != len(cr.colptr):
+    if cr.rowptr.buf[cr.rowptr.size - 1] != cr.colptr.size:
         raise RuntimeError("ConnectedRegion was not finalised.  Ensure "
                            "rowptr[-1] points beyond last entry of "
                            "colptr.")
 
-    if len(cr.colptr) % 2 != 0:
+    if cr.colptr.size % 2 != 0:
         raise RuntimeError("Colptr must have 2xN entries.")
 
 # Return type should be bool, but cython complains
-cdef inline int gt(int a, int b):
+cdef int gt(int a, int b):
     return a > b
 
-cdef inline int lt(int a, int b):
+cdef int lt(int a, int b):
     return a < b
 
 cdef int _boundary_extremum(list boundary_x, list boundary_y,
@@ -308,13 +326,13 @@ def boundary_minimum(ConnectedRegion cr,
                              img.shape[0], img.shape[1])
 
 
-cdef inline int min2(int a, int b):
+cdef int min2(int a, int b):
     if a < b:
         return a
     else:
         return b
 
-cdef inline int max2(int a, int b):
+cdef int max2(int a, int b):
     if a > b:
         return a
     else:
@@ -326,44 +344,44 @@ cpdef merge(ConnectedRegion a, ConnectedRegion b):
     """
     cdef int i, r, rpt, cpt
     cdef int start_row = min2(a._start_row, b._start_row)
-    cdef int end_row = max2(a._start_row + len(a.rowptr) - 2,
-                            b._start_row + len(b.rowptr) - 2)
+    cdef int end_row = max2(a._start_row + a.rowptr.size - 2,
+                            b._start_row + b.rowptr.size - 2)
 
-    cdef list new_colptr = []
-    cdef list new_rowptr = []
+    cdef IntArray new_colptr = IntArray()
+    cdef IntArray new_rowptr = IntArray()
 
     cdef list cols, merged_cols
 
     for r in range(start_row, end_row + 1):
-        new_rowptr.append(len(new_colptr))
+        iarr.append(new_rowptr, new_colptr.size)
 
         # Non-overlapping, use b
-        if r < a._start_row or r > (len(a.rowptr) + a._start_row - 2):
+        if r < a._start_row or r > (a.rowptr.size + a._start_row - 2):
             rpt = r - b._start_row
-            for i in range(<int>b.rowptr[rpt], <int>b.rowptr[rpt + 1]):
-                new_colptr.append(b.colptr[i])
+            for i in range(b.rowptr.buf[rpt], b.rowptr.buf[rpt + 1]):
+                iarr.append(new_colptr, b.colptr.buf[i])
 
         # Non-overlapping, use a
-        elif r < b._start_row or r > (len(b.rowptr) + b._start_row - 2):
+        elif r < b._start_row or r > (b.rowptr.size + b._start_row - 2):
             rpt = r - a._start_row
-            for i in range(<int>a.rowptr[rpt], <int>a.rowptr[rpt + 1]):
-                new_colptr.append(a.colptr[i])
+            for i in range(a.rowptr.buf[rpt], a.rowptr.buf[rpt + 1]):
+                iarr.append(new_colptr, a.colptr.buf[i])
 
         # Overlapping: merge
         else:
             cols = []
             merged_cols = []
             rpt = r - a._start_row
-            for i in range((<int>a.rowptr[rpt + 1] - <int>a.rowptr[rpt]) // 2):
-                cpt = <int>a.rowptr[rpt] + 2 * i
+            for i in range((a.rowptr.buf[rpt + 1] - a.rowptr.buf[rpt]) // 2):
+                cpt = a.rowptr.buf[rpt] + 2 * i
 
-                cols.append([a.colptr[cpt], a.colptr[cpt + 1]])
+                cols.append([a.colptr.buf[cpt], a.colptr.buf[cpt + 1]])
 
             rpt = r - b._start_row
-            for i in range((<int>b.rowptr[rpt + 1] - <int>b.rowptr[rpt]) // 2):
-                cpt = <int>b.rowptr[rpt] + 2 * i
+            for i in range((b.rowptr.buf[rpt + 1] - b.rowptr.buf[rpt]) // 2):
+                cpt = b.rowptr.buf[rpt] + 2 * i
 
-                cols.append([b.colptr[cpt], b.colptr[cpt + 1]])
+                cols.append([b.colptr.buf[cpt], b.colptr.buf[cpt + 1]])
 
             cols.sort()
 
@@ -375,9 +393,10 @@ cpdef merge(ConnectedRegion a, ConnectedRegion b):
 
             merged_cols.extend(cols[-1])
 
-            new_colptr.extend(merged_cols)
+            for i in merged_cols:
+                iarr.append(new_colptr, i)
 
-    new_rowptr.append(len(new_colptr))
+    iarr.append(new_rowptr, new_colptr.size)
 
     a.colptr = new_colptr
     a.rowptr = new_rowptr
@@ -393,15 +412,15 @@ cdef _set_array(np.int_t* arr, int rows, int cols,
     Mode: 0 == replace, 1 == add
 
     """
-    cdef list rowptr = cr.rowptr
-    cdef list colptr = cr.colptr
+    cdef int* rowptr = cr.rowptr.buf
+    cdef int* colptr = cr.colptr.buf
 
     cdef int r, c, start, end, k, start_row = cr._start_row
 
-    for r in range(len(rowptr) - 1):
+    for r in range(cr.rowptr.size - 1):
         for c in range((rowptr[r + 1] - rowptr[r]) / 2):
-            start = colptr[<int>rowptr[r] + 2*c]
-            end = colptr[<int>rowptr[r] + 2*c + 1]
+            start = colptr[rowptr[r] + 2*c]
+            end = colptr[rowptr[r] + 2*c + 1]
 
             for k in range(start, end):
                 # This could probably be done more efficiently
@@ -423,36 +442,26 @@ def set_array(np.ndarray[np.int_t, ndim=2] arr,
     return _set_array(<np.int_t*>arr.data, arr.shape[0], arr.shape[1],
                       c, value, add_mode)
 
-cpdef mem_use(ConnectedRegion cr):
-    """Estimate memory usage of the given region.
-
-    """
-    cdef int ptr_size = sizeof(int*)
-    cdef int int_size = sizeof(int)
-    return sizeof(ConnectedRegion) + \
-           len(cr.colptr)*int_size + \
-           len(cr.rowptr)*int_size
-
 cpdef bounding_box(ConnectedRegion cr):
-    return (cr._start_row, min(cr.colptr),
-            cr._start_row + len(cr.rowptr) - 2, max(cr.colptr) - 1)
+    return (cr._start_row, iarr.min(cr.colptr),
+            cr._start_row + cr.rowptr.size - 2, iarr.max(cr.colptr) - 1)
 
 # These methods are needed by the lulu decomposition to build
 # connected regions incrementally
 
 cpdef _new_row(ConnectedRegion cr):
-    cdef int L = len(cr.colptr)
+    cdef int L = cr.colptr.size
 
-    if not cr.rowptr[-1] == L:
-        cr.rowptr.append(L)
-
-cpdef _append_colptr(ConnectedRegion cr, int a, int b):
-    cr.colptr.append(a)
-    cr.colptr.append(b)
+    if not cr.rowptr.buf[cr.rowptr.size - 1] == L:
+        iarr.append(cr.rowptr, L)
 
 cpdef int _current_row(ConnectedRegion cr):
-    return len(cr.rowptr) + cr._start_row - 1
+    return cr.rowptr.size + cr._start_row - 1
 
+# This internal method is only used to construct proper test data
+def _append_colptr(ConnectedRegion cr, *ints):
+    for i in ints:
+        iarr.append(cr.colptr, i)
 
 def todense(ConnectedRegion cr):
     """Convert the connected region to a dense array.
@@ -473,9 +482,3 @@ def todense(ConnectedRegion cr):
             out[row, k] = cr._value
 
     return out
-
-cpdef list get_colptr(ConnectedRegion cr):
-    return cr.colptr
-
-cpdef list get_rowptr(ConnectedRegion cr):
-    return cr.rowptr

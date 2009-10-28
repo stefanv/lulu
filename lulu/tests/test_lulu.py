@@ -54,3 +54,5 @@ class TestReconstruction:
         img_, areas, area_count = lulu.reconstruct(pulses, img.shape)
         assert_array_equal(img_, img)
 
+if __name__ == "__main__":
+    run_module_suite()

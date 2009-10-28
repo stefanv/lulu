@@ -11,7 +11,9 @@ import sys
 
 from lulu.ccomp import label
 from lulu.connected_region cimport ConnectedRegion
+
 cimport lulu.connected_region_handler as crh
+cimport int_array as iarr
 
 def connected_regions(np.ndarray[np.int_t, ndim=2] img):
     """Return ConnectedRegions that, together, compose the whole image.
@@ -32,7 +34,7 @@ def connected_regions(np.ndarray[np.int_t, ndim=2] img):
     cdef int rows = img.shape[0]
     cdef int columns = img.shape[1]
 
-    cdef ConnectedRegion cr
+    cdef ConnectedRegion cr, cur_region
 
     # perform initial labeling
     cdef np.ndarray[np.int_t, ndim=2] labels = label(img)
@@ -71,7 +73,8 @@ def connected_regions(np.ndarray[np.int_t, ndim=2] img):
                     crh._new_row(cur_region)
 
                 # Add connected region
-                crh._append_colptr(cur_region, connect_from, c)
+                iarr.append(cur_region.colptr, connect_from)
+                iarr.append(cur_region.colptr, c)
 
                 connect_from = c
 
@@ -171,7 +174,7 @@ cdef dict _identify_pulses_and_merges(dict regions, int area, dict pulses,
             # Only interested in regions of a certain area.
             continue
 
-        idx0 = cr._start_row * cols + <int>cr.colptr[0]
+        idx0 = cr._start_row * cols + cr.colptr.buf[0]
         old_value = cr._value
         do_merge = False
 
