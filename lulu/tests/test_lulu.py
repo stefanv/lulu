@@ -48,9 +48,10 @@ class TestLULU:
 
 class TestReconstruction:
     def test_basic(self):
-        img = np.random.randint(255, size=(10, 10))
+        img = np.random.randint(255, size=(10, 15))
 
         pulses = lulu.decompose(img)
         img_, areas, area_count = lulu.reconstruct(pulses, img.shape)
 
         assert_array_equal(img_, img)
+

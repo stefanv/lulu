@@ -82,67 +82,49 @@ def connected_regions(np.ndarray[np.int_t, ndim=2] img):
 
     return labels, regions
 
-cdef _merge_all(list merge_region_positions, dict regions, dict area_histogram,
-                np.int_t* image, np.int_t* labels, int rows, int cols):
+cdef _merge_all(dict merges, dict regions, dict area_histogram,
+                np.int_t* labels, int rows, int cols):
     """
     Merge all regions that have connections on their boundaries.
 
     """
-    cdef list x, y
-    cdef int i, p_row, p_col, r, c, idx, new_area
-    cdef ConnectedRegion cr, this_region
-    cdef int this_label, cr_label, new_label
+    cdef ConnectedRegion cr_a, cr_b
+    cdef int label, new_area, b_label
 
-    for p_row, p_col in merge_region_positions:
-        cr_label = labels[p_row*cols + p_col]
-        cr = regions[cr_label]
+    for label in merges:
+        try:
+            cr_a = regions[label]
+        except KeyError:
+            continue
 
-        y, x = crh.outside_boundary(cr)
-
-        # Check boundary for regions to merge
-        for i in range(len(y)):
-            r = y[i]
-            c = x[i]
-
-            # boundary check
-            if (r < 0 or r >= rows) or (c < 0 or c >= cols):
+        for cr_b in merges[label]:
+            b_label = cr_b._start_row * cols + <int>cr_b.colptr[0]
+            if b_label == label:
+                # Regions have alreay been merged
                 continue
 
-            idx = r*cols + c
+            # Merge; update regions, labels
+            # Image has already been updated in identify_pulses_and_merges
 
-            # Check whether these regions should be merged (only if they
-            # haven't been already)
-            this_label = labels[idx]
-            if image[idx] == cr._value and this_label != cr_label:
-                this_region = regions[this_label]
+            # Update area histogram
+            new_area = cr_a._nnz + cr_b._nnz
+            area_histogram[cr_a._nnz] -= 1
+            area_histogram[cr_b._nnz] -= 1
+            try:
+                area_histogram[new_area] += 1
+            except KeyError:
+                area_histogram[new_area] = 1
 
-                # Merge; update regions, labels and image
-                new_label = crh.min2(cr_label, this_label)
+            # Can delete regions later if needed; check speed implications
+#            del regions[labels[b_label]]
+            crh._set_array(labels, rows, cols, cr_b, label)
 
-                # Update area histogram
-                new_area = cr._nnz + this_region._nnz
-                area_histogram[cr._nnz] -= 1
-                area_histogram[this_region._nnz] -= 1
-                try:
-                    area_histogram[new_area] += 1
-                except KeyError:
-                    area_histogram[new_area] = 1
+            # Update labels of cr_b
+            crh.merge(cr_a, cr_b) # merge b into a
 
-                crh.merge(cr, this_region)
-
-                # OPT: Only one of these deletes need to be executed.
-                del regions[cr_label]
-                del regions[this_label]
-                regions[new_label] = cr
-                cr_label = new_label
-
-                # Update labels
-                crh._set_array(labels, rows, cols, cr, new_label)
-                cr._nnz = new_area
-
-cdef list _identify_pulses_and_merges(dict regions, int area, dict pulses,
-                                      np.int_t* img_data, int rows, int cols,
-                                      int mode=0):
+cdef dict _identify_pulses_and_merges(dict regions, int area, dict pulses,
+                                      np.int_t* img_data, np.int_t* labels,
+                                      int rows, int cols, int mode=0):
     """Return positions of areas that need to be merged after the removal.
 
     Parameters
@@ -159,14 +141,16 @@ cdef list _identify_pulses_and_merges(dict regions, int area, dict pulses,
     cdef int b_min = cr._value
     cdef int old_value
 
-    cdef list merge_region_positions = []
+    cdef dict merges = {}
     cdef list y, x
+    cdef int i, label, idx
+    cdef int xi, yi
 
     if area not in pulses:
         pulses[area] = []
 
     # Examine regions of a certain size only
-    for cr in regions.itervalues():
+    for label, cr in regions.iteritems():
         if cr._nnz != area:
             # Only interested in regions of a certain area.
             continue
@@ -199,19 +183,33 @@ cdef list _identify_pulses_and_merges(dict regions, int area, dict pulses,
                 cr._value = 0
 
             crh._set_array(img_data, rows, cols, cr, cr._value)
+            try:
+                # Check if this key exists
+                merges[label].discard(0)
+            except KeyError:
+                merges[label] = set([])
 
             cr_save = crh.copy(cr)
             cr_save._value = old_value - cr._value # == pulse height
             pulses[area].append(cr_save)
 
-            # We don't need to re-examine each merged area for re-merging,
-            # so can still optimise this later.
-            merge_region_positions.append((cr._start_row, <int>cr.colptr[0]))
+            for i in range(len(x)):
+                xi = x[i]
+                yi = y[i]
+
+                if (xi < 0) or (xi >= cols) or (yi < 0) or (yi >= rows):
+                    # Position outside boundary
+                    continue
+
+                idx = yi * cols + xi
+
+                if img_data[idx] == cr._value:
+                    merges[label].add(regions[labels[idx]])
 
     if len(pulses[area]) == 0:
         del pulses[area]
 
-    return merge_region_positions
+    return merges
 
 def decompose(np.ndarray[np.int_t, ndim=2] img):
     """Decompose a two-dimensional signal into pulses.
@@ -248,7 +246,7 @@ def decompose(np.ndarray[np.int_t, ndim=2] img):
     labels, regions = connected_regions(img)
     cdef np.int_t* labels_data = <np.int_t*>labels.data
 
-    cdef list merge_region_positions
+    cdef set merge_region_positions
 
     cdef dict area_histogram = {}
     cdef dict pulses = {}
@@ -280,22 +278,22 @@ def decompose(np.ndarray[np.int_t, ndim=2] img):
             continue
 
         # Upper
-        merge_region_positions = \
-            _identify_pulses_and_merges(regions, area, pulses,
-                                        img_data, max_rows, max_cols, 0)
+        merges = \
+               _identify_pulses_and_merges(regions, area, pulses,
+                                           img_data, labels_data,
+                                           max_rows, max_cols, 0)
 
-        _merge_all(merge_region_positions,
-                   regions, area_histogram,
-                   img_data, labels_data, max_rows, max_cols)
+        _merge_all(merges, regions, area_histogram,
+                   labels_data, max_rows, max_cols)
 
         # Lower
-        merge_region_positions = \
-            _identify_pulses_and_merges(regions, area, pulses,
-                                        img_data, max_rows, max_cols, 1)
+        merges = \
+               _identify_pulses_and_merges(regions, area, pulses,
+                                           img_data, labels_data,
+                                           max_rows, max_cols, 1)
 
-        _merge_all(merge_region_positions,
-                   regions, area_histogram,
-                   img_data, labels_data, max_rows, max_cols)
+        _merge_all(merges, regions, area_histogram,
+                   labels_data, max_rows, max_cols)
 
 
     print
