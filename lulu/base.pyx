@@ -99,6 +99,13 @@ cdef _merge_all(dict merges, dict regions, dict area_histogram,
             b_label = labels[idx1]
             cr_b = regions[b_label]
 
+            # Always merge a region with a larger index into a
+            # region with a smaller index.  This results in an ordered
+            # connected component labelling.
+            if b_label < a_label:
+                cr_a, cr_b = cr_b, cr_a
+                a_label, b_label = b_label, a_label
+
             if b_label == a_label:
                 # Regions have alreay been merged
                 continue
@@ -145,27 +152,28 @@ cdef dict _identify_pulses_and_merges(dict regions, int area, dict pulses,
     """
     cdef ConnectedRegion cr, cr_save
 
-    cdef int b_max = cr._value
-    cdef int b_min = cr._value
+    cdef int b_max
+    cdef int b_min
     cdef int old_value
 
     cdef dict merges = {}
+    cdef list merge_indices = []
     cdef list y, x
-    cdef int i, label, idx0, idx1
+    cdef int i, idx0, idx1
     cdef int xi, yi
+    cdef bool do_merge
 
     if area not in pulses:
         pulses[area] = []
 
-    # Examine regions of a certain size only
     for cr in regions.itervalues():
-        idx0 = cr._start_row * cols + <int>cr.colptr[0]
-
         if cr._nnz != area:
             # Only interested in regions of a certain area.
             continue
 
+        idx0 = cr._start_row * cols + <int>cr.colptr[0]
         old_value = cr._value
+        do_merge = False
 
         y, x = crh.outside_boundary(cr)
 
@@ -174,8 +182,12 @@ cdef dict _identify_pulses_and_merges(dict regions, int area, dict pulses,
             b_min = crh._boundary_minimum(x, y, img_data, rows, cols)
 
             # Minimal set
-            if b_min > old_value:
+            if b_min > old_value: # Note that this needs to be strictly
+                                  # greater than.  It may happen that,
+                                  # during the lowering of values further down,
+                                  # the connected regions end up being equal.
                 cr._value = b_min
+                do_merge = True
 
         # Lower
         if mode == 1 or mode == 2:
@@ -184,24 +196,24 @@ cdef dict _identify_pulses_and_merges(dict regions, int area, dict pulses,
             # Maximal set
             if b_max < old_value:
                 cr._value = b_max
+                do_merge = True
 
         # Minimal or maximal region detected
-        if cr._value != old_value:
-#            # This should occur exactly once: on the last
-#            # pulse that covers the whole image
+        if do_merge:
+            # This should occur exactly once: on the last
+            # pulse that covers the whole image
             if cr._value == -1:
                 cr._value = 0
 
+            # By setting the region value here, we prevent neighbouring
+            # regions from picking it up in consequent iterations of this
+            # loop
             crh._set_array(img_data, rows, cols, cr, cr._value)
-            try:
-                # Check if this key exists
-                merges[idx0].discard(-1)
-            except KeyError:
-                merges[idx0] = set([])
+            merge_indices = []
 
             cr_save = crh.copy(cr)
             cr_save._value = old_value - cr._value # == pulse height
-            pulses[area].append(cr_save)
+            <list>(pulses[area]).append(cr_save)
 
             for i in range(len(x)):
                 xi = x[i]
@@ -214,7 +226,9 @@ cdef dict _identify_pulses_and_merges(dict regions, int area, dict pulses,
                 idx1 = yi * cols + xi
 
                 if img_data[idx1] == cr._value:
-                    merges[idx0].add(idx1)
+                    merge_indices.append(idx1)
+
+            merges[idx0] = merge_indices
 
     if len(pulses[area]) == 0:
         del pulses[area]
