@@ -89,17 +89,17 @@ cdef _merge_all(dict merges, dict regions, dict area_histogram,
 
     """
     cdef ConnectedRegion cr_a, cr_b
-    cdef int label, new_area, b_label
+    cdef int idx0, idx1, new_area, a_label, b_label
 
-    for label in merges:
-        try:
-            cr_a = regions[label]
-        except KeyError:
-            continue
+    for idx0 in merges:
+        a_label = labels[idx0]
+        cr_a = regions[a_label]
 
-        for cr_b in merges[label]:
-            b_label = cr_b._start_row * cols + <int>cr_b.colptr[0]
-            if b_label == label:
+        for idx1 in merges[idx0]:
+            b_label = labels[idx1]
+            cr_b = regions[b_label]
+
+            if b_label == a_label:
                 # Regions have alreay been merged
                 continue
 
@@ -115,9 +115,8 @@ cdef _merge_all(dict merges, dict regions, dict area_histogram,
             except KeyError:
                 area_histogram[new_area] = 1
 
-            # Can delete regions later if needed; check speed implications
-#            del regions[labels[b_label]]
-            crh._set_array(labels, rows, cols, cr_b, label)
+            del regions[b_label]
+            crh._set_array(labels, rows, cols, cr_b, a_label)
 
             # Update labels of cr_b
             crh.merge(cr_a, cr_b) # merge b into a
@@ -125,7 +124,7 @@ cdef _merge_all(dict merges, dict regions, dict area_histogram,
 cdef dict _identify_pulses_and_merges(dict regions, int area, dict pulses,
                                       np.int_t* img_data, np.int_t* labels,
                                       int rows, int cols, int mode=0):
-    """Return positions of areas that need to be merged after the removal.
+    """Save pulses of this area, and return regions that need to be merged.
 
     Parameters
     ----------
@@ -133,6 +132,15 @@ cdef dict _identify_pulses_and_merges(dict regions, int area, dict pulses,
         0 - U (upper), raise minima
         1 - L (lower), lower maxima
         2 - B (both), do both
+
+    Returns
+    -------
+    merges : dict
+        {idx: [cr0_idx, cr1_idx, ...]}
+
+        idx is the index (row*max_cols + col) of the current region
+        cr0, cr1, ... are the indices of the connected_regions with which it
+                      must be merged
 
     """
     cdef ConnectedRegion cr, cr_save
@@ -143,14 +151,16 @@ cdef dict _identify_pulses_and_merges(dict regions, int area, dict pulses,
 
     cdef dict merges = {}
     cdef list y, x
-    cdef int i, label, idx
+    cdef int i, label, idx0, idx1
     cdef int xi, yi
 
     if area not in pulses:
         pulses[area] = []
 
     # Examine regions of a certain size only
-    for label, cr in regions.iteritems():
+    for cr in regions.itervalues():
+        idx0 = cr._start_row * cols + <int>cr.colptr[0]
+
         if cr._nnz != area:
             # Only interested in regions of a certain area.
             continue
@@ -177,17 +187,17 @@ cdef dict _identify_pulses_and_merges(dict regions, int area, dict pulses,
 
         # Minimal or maximal region detected
         if cr._value != old_value:
-            # This should occur exactly once: on the last
-            # pulse that covers the whole image
+#            # This should occur exactly once: on the last
+#            # pulse that covers the whole image
             if cr._value == -1:
                 cr._value = 0
 
             crh._set_array(img_data, rows, cols, cr, cr._value)
             try:
                 # Check if this key exists
-                merges[label].discard(0)
+                merges[idx0].discard(-1)
             except KeyError:
-                merges[label] = set([])
+                merges[idx0] = set([])
 
             cr_save = crh.copy(cr)
             cr_save._value = old_value - cr._value # == pulse height
@@ -201,10 +211,10 @@ cdef dict _identify_pulses_and_merges(dict regions, int area, dict pulses,
                     # Position outside boundary
                     continue
 
-                idx = yi * cols + xi
+                idx1 = yi * cols + xi
 
-                if img_data[idx] == cr._value:
-                    merges[label].add(regions[labels[idx]])
+                if img_data[idx1] == cr._value:
+                    merges[idx0].add(idx1)
 
     if len(pulses[area]) == 0:
         del pulses[area]

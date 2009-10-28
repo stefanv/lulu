@@ -383,7 +383,7 @@ cpdef merge(ConnectedRegion a, ConnectedRegion b):
     a.rowptr = new_rowptr
     a._start_row = start_row
     reshape(a)
-    a._nnz = a._nnz + b._nnz #crh.nnz(a)
+    a._nnz = a._nnz + b._nnz
 
 cdef _set_array(np.int_t* arr, int rows, int cols,
                 ConnectedRegion cr, int value,
