@@ -27,7 +27,6 @@ print "Reconstructing image...",
 out, areas, area_count = lulu.reconstruct(regions, img.shape)
 print "done."
 print "Reconstructed from %d pulses." % sum(area_count)
-print "Estimated memory use: %d bytes" % memory_use(regions)
 print "-"*78
 
 plt.subplot(2, 2, 1)
