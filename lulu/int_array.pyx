@@ -8,8 +8,8 @@ cdef class IntArray:
 
     """
     def __init__(self):
-        self.buf = <int*>stdlib.malloc(sizeof(int) * 8) # storage
-        self.cap = 8
+        self.cap = 6
+        self.buf = <int*>stdlib.malloc(sizeof(int) * self.cap) # storage
         self.size = 0
 
 cpdef append(IntArray arr, int x):
@@ -18,8 +18,8 @@ cpdef append(IntArray arr, int x):
 
     if arr.size == arr.cap:
         # Array is full -- allocate new memory
-        new_buf = <int*>stdlib.malloc(sizeof(int) * arr.cap * 2)
-        arr.cap *= 2
+        arr.cap = arr.cap * 2
+        new_buf = <int*>stdlib.malloc(sizeof(int) * arr.cap)
 
         for i in range(arr.size):
             new_buf[i] = arr.buf[i]
