@@ -7,10 +7,13 @@ cdef class IntArray:
     """See int_array.pxd for members.
 
     """
-    def __init__(self):
+    def __cinit__(self):
         self.cap = 6
         self.buf = <int*>stdlib.malloc(sizeof(int) * self.cap) # storage
         self.size = 0
+
+    def __dealloc__(self):
+        stdlib.free(self.buf)
 
 cpdef append(IntArray arr, int x):
     cdef int* new_buf
