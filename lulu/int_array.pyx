@@ -15,7 +15,7 @@ cdef class IntArray:
     def __dealloc__(self):
         stdlib.free(self.buf)
 
-cpdef append(IntArray arr, int x):
+cpdef inline append(IntArray arr, int x):
     cdef int* new_buf
     cdef int i
 
