@@ -105,6 +105,12 @@ cpdef set_start_row(ConnectedRegion cr, int start_row):
 cpdef int get_start_row(ConnectedRegion cr):
     return cr._start_row
 
+cpdef list get_colptr(ConnectedRegion cr):
+    return iarr.to_list(cr.colptr)
+
+cpdef list get_rowptr(ConnectedRegion cr):
+    return iarr.to_list(cr.rowptr)
+
 cpdef int contains(ConnectedRegion cr, int r, int c):
     """Does the connected region contain an element at (r, c)?
 

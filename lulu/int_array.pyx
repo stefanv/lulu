@@ -61,3 +61,12 @@ cpdef from_list(IntArray arr, list ii):
 
 cpdef int get(IntArray arr, int idx):
     return arr.buf[idx]
+
+cpdef list to_list(IntArray arr):
+    cdef list out = []
+    cdef int i
+
+    for i in range(arr.size):
+        out.append(arr.buf[i])
+
+    return out

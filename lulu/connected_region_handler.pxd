@@ -7,9 +7,11 @@ cdef _iterate_rows(ConnectedRegion cr)
 cpdef int nnz(ConnectedRegion cr)
 
 # getters and setters
-cpdef get_shape(ConnectedRegion cr)
-cpdef int get_start_row(ConnectedRegion cr)
-cpdef int get_value(ConnectedRegion cr)
+cpdef get_shape(ConnectedRegion)
+cpdef int get_start_row(ConnectedRegion)
+cpdef int get_value(ConnectedRegion)
+cpdef list get_colptr(ConnectedRegion)
+cpdef list get_rowptr(ConnectedRegion)
 
 cpdef reshape(ConnectedRegion cr, shape=?)
 cpdef set_start_row(ConnectedRegion cr, int start_row)
@@ -32,10 +34,10 @@ cdef _set_array(np.int_t* arr, int rows, int cols, ConnectedRegion c,
 cpdef bounding_box(ConnectedRegion cr)
 
 # Useful functions
-cdef inline int min2(int a, int b)
-cdef inline int max2(int a, int b)
-cdef inline int gt(int a, int b)
-cdef inline int lt(int a, int b)
+cdef int min2(int a, int b)
+cdef int max2(int a, int b)
+cdef int gt(int a, int b)
+cdef int lt(int a, int b)
 
 # These methods are needed by the lulu decomposition to build
 # connected regions incrementally

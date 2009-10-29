@@ -173,5 +173,15 @@ class TestConnectedRegion:
         assert_equal(crh.bounding_box(self.c),
                      (1, 0, 3, 4))
 
+    def test_pickle(self):
+        import pickle
+        from StringIO import StringIO
+        s = StringIO()
+        pickle.dump(self.c, s)
+        s.seek(0)
+        new_c = pickle.load(s)
+
+        assert np.all(crh.todense(new_c) == crh.todense(self.c))
+
 if __name__ == "__main__":
     run_module_suite()
