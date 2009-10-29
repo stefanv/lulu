@@ -58,15 +58,19 @@ class TestConnectedRegion:
 
     def test_outside_boundary(self):
         y, x = crh.outside_boundary(self.c)
-        assert_array_equal(x, [2, 4, 0, 1, 3, 5, -1, 3, 4, 0, 1, 5, 2, 3, 4])
-        assert_array_equal(y, [0, 0, 1, 1, 1, 1, 2, 2, 2, 3, 3, 3, 4, 4, 4])
+        assert_array_equal(iarr.to_list(x),
+                           [2, 4, 0, 1, 3, 5, -1, 3, 4, 0, 1, 5, 2, 3, 4])
+        assert_array_equal(iarr.to_list(y),
+                           [0, 0, 1, 1, 1, 1, 2, 2, 2, 3, 3, 3, 4, 4, 4])
 
         c = ConnectedRegion(shape=(1, 5),
                             rowptr=[0, 2],
                             colptr=[2, 3])
         y, x = crh.outside_boundary(c)
-        assert_array_equal(x, [2, 1, 3, 2])
-        assert_array_equal(y, [-1, 0, 0, 1])
+        assert_array_equal(iarr.to_list(x),
+                           [2, 1, 3, 2])
+        assert_array_equal(iarr.to_list(y),
+                           [-1, 0, 0, 1])
 
     def test_outside_boundary_beyond_border(self):
         c = ConnectedRegion(shape=(2, 2),
@@ -76,8 +80,10 @@ class TestConnectedRegion:
         assert_array_equal(crh.todense(c), np.eye(2))
 
         y, x = crh.outside_boundary(c)
-        assert_array_equal(y, [-1, 0, 0, 1, 1, 2])
-        assert_array_equal(x, [0, -1, 1, 0, 2, 1])
+        assert_array_equal(iarr.to_list(y),
+                           [-1, 0, 0, 1, 1, 2])
+        assert_array_equal(iarr.to_list(x),
+                           [0, -1, 1, 0, 2, 1])
 
     def test_value(self):
         c = ConnectedRegion(shape=(2, 2))

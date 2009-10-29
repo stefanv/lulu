@@ -14,6 +14,7 @@ from lulu.connected_region cimport ConnectedRegion
 
 cimport lulu.connected_region_handler as crh
 cimport int_array as iarr
+from int_array cimport IntArray
 
 def connected_regions(np.ndarray[np.int_t, ndim=2] img):
     """Return ConnectedRegions that, together, compose the whole image.
@@ -165,7 +166,7 @@ cdef dict _identify_pulses_and_merges(set regions, int area, dict pulses,
 
     cdef dict merges = {}
     cdef list merge_indices = []
-    cdef list y, x
+    cdef IntArray y, x
     cdef int i, idx0, idx1
     cdef int xi, yi
     cdef bool do_merge
@@ -218,9 +219,9 @@ cdef dict _identify_pulses_and_merges(set regions, int area, dict pulses,
             cr_save._value = old_value - cr._value # == pulse height
             (<list>pulses[area]).append(cr_save)
 
-            for i in range(len(x)):
-                xi = x[i]
-                yi = y[i]
+            for i in range(x.size):
+                xi = x.buf[i]
+                yi = y.buf[i]
 
                 if (xi < 0) or (xi >= cols) or (yi < 0) or (yi >= rows):
                     # Position outside boundary

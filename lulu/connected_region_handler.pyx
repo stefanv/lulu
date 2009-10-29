@@ -167,7 +167,7 @@ cpdef outside_boundary(ConnectedRegion cr):
     cdef int i # scanline row-position
     cdef int j # column position in scanline
     cdef int start, end, k, c
-    cdef list x = [], y = []
+    cdef IntArray x = IntArray(), y = IntArray()
 
     cdef int* rowptr = cr.rowptr.buf
     cdef int* colptr = cr.colptr.buf
@@ -188,8 +188,8 @@ cpdef outside_boundary(ConnectedRegion cr):
         r = cr._start_row
         c = colptr[0]
 
-        x = [c, c-1, c+1, c]
-        y = [r-1, r, r, r+1]
+        iarr.from_list(x, [c, c-1, c+1, c])
+        iarr.from_list(y, [r-1, r, r, r+1])
 
         return y, x
 
@@ -223,19 +223,19 @@ cpdef outside_boundary(ConnectedRegion cr):
         for j in range(columns):
             # Test four neighbours for connections
             if j == 0 and line[j] == 1:
-                x.append(-1 + col_min)
-                y.append(i - 1 + cr._start_row)
+                iarr.append(x, -1 + col_min)
+                iarr.append(y, i - 1 + cr._start_row)
 
             if (line[j] == 0) and \
                (line_above[j] == 1 or line_below[j] == 1 or
                 ((j - 1) >= 0 and line[j - 1] == 1) or \
                 ((j + 1) < columns and line[j + 1] == 1)):
-                x.append(j + col_min)
-                y.append(i - 1 + cr._start_row)
+                iarr.append(x, j + col_min)
+                iarr.append(y, i - 1 + cr._start_row)
 
             if j == columns - 1 and line[j] == 1:
-                x.append(columns + col_min)
-                y.append(i - 1 + cr._start_row)
+                iarr.append(x, columns + col_min)
+                iarr.append(y, i - 1 + cr._start_row)
 
     stdlib.free(line_above)
     stdlib.free(line)
@@ -266,7 +266,7 @@ cdef int gt(int a, int b):
 cdef int lt(int a, int b):
     return a < b
 
-cdef int _boundary_extremum(list boundary_x, list boundary_y,
+cdef int _boundary_extremum(IntArray boundary_x, IntArray boundary_y,
                             np.int_t* img,
                             int max_rows, int max_cols,
                             int (*func)(int, int),
@@ -292,9 +292,9 @@ cdef int _boundary_extremum(list boundary_x, list boundary_y,
     cdef np.int_t img_val
     cdef int extremum = initial_extremum
 
-    for i in range(len(boundary_y)):
-        r = boundary_y[i]
-        c = boundary_x[i]
+    for i in range(boundary_y.size):
+        r = boundary_y.buf[i]
+        c = boundary_x.buf[i]
 
         if r < 0 or r >= max_rows or c < 0 or c >= max_cols:
             continue
@@ -305,28 +305,29 @@ cdef int _boundary_extremum(list boundary_x, list boundary_y,
 
     return extremum
 
-cdef int _boundary_maximum(list boundary_x, list boundary_y,
+cdef int _boundary_maximum(IntArray boundary_x, IntArray boundary_y,
                            np.int_t* img,
                            int max_rows, int max_cols):
     return _boundary_extremum(boundary_x, boundary_y, img,
                               max_rows, max_cols, gt, -1)
 
-cdef int _boundary_minimum(list boundary_x, list boundary_y,
+cdef int _boundary_minimum(IntArray boundary_x, IntArray boundary_y,
                            np.int_t* img,
                            int max_rows, int max_cols):
     return _boundary_extremum(boundary_x, boundary_y, img,
                               max_rows, max_cols, lt, 256)
 
+# Python wrappers for the above two functions
 def boundary_maximum(ConnectedRegion cr,
                      np.ndarray[np.int_t, ndim=2] img):
-    cdef list y, x
+    cdef IntArray y, x
     y, x = outside_boundary(cr)
     return _boundary_maximum(x, y, <np.int_t*>img.data,
                              img.shape[0], img.shape[1])
 
 def boundary_minimum(ConnectedRegion cr,
                      np.ndarray[np.int_t, ndim=2] img):
-    cdef list y, x
+    cdef IntArray y, x
     y, x = outside_boundary(cr)
     return _boundary_minimum(x, y, <np.int_t*>img.data,
                              img.shape[0], img.shape[1])
