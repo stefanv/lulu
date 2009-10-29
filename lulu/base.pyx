@@ -122,9 +122,9 @@ cdef _merge_all(dict merges, dict regions, int area, dict regions_by_area,
             del regions[b_label]
             crh._set_array(labels, rows, cols, cr_b, a_label)
 
-            if cr_b._nnz > area:
+            if cr_b._nnz >= area:
                 (<set>regions_by_area[cr_b._nnz]).remove(cr_b)
-            if cr_a._nnz > area:
+            if cr_a._nnz >= area:
                 (<set>regions_by_area[cr_a._nnz]).remove(cr_a)
 
             # Update labels of cr_b
