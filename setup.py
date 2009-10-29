@@ -13,7 +13,7 @@ def cext(name):
                      include_dirs=[numpy.get_include()])
 
 setup(name='lulu',
-      version='0.9.3',
+      version='1.0',
       description='Fast and efficient implementation of the 2D '
                   'discrete pulse transform (LULU-operator)',
       author='Stefan van der Walt',
