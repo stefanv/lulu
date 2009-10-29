@@ -1,5 +1,5 @@
 cdef enum:
-     HEAP_SIZE = 10
+     HEAP_SIZE = 6
 
 cdef class IntArray:
     cdef int* buf
