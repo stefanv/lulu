@@ -19,20 +19,9 @@ cdef class IntArray:
             stdlib.free(self.buf)
 
 cpdef inline append(IntArray arr, int x):
-    cdef int* new_buf
-    cdef int i
-
     if arr.size == arr.cap:
         # Array is full -- allocate new memory
-        arr.cap = arr.cap * 2
-        new_buf = <int*>stdlib.malloc(sizeof(int) * arr.cap)
-
-        for i in range(arr.size):
-            new_buf[i] = arr.buf[i]
-
-        if arr.buf != arr.heapbuf:
-            stdlib.free(arr.buf)
-        arr.buf = new_buf
+        grow(arr, arr.cap * 2)
 
     arr.buf[arr.size] = x
     arr.size += 1
@@ -53,8 +42,32 @@ cpdef int min(IntArray arr):
 
     return m
 
+cdef inline grow(IntArray arr, int cap):
+    """Grow the underlying array storage so that it can
+    store `cap` elements.
+
+    """
+    cdef int* new_buf
+    cdef int i
+
+    if cap <= arr.size:
+        return
+
+    arr.cap = cap
+    new_buf = <int*>stdlib.malloc(sizeof(int) * cap)
+
+    for i in range(arr.size):
+        new_buf[i] = arr.buf[i]
+
+    if arr.buf != arr.heapbuf:
+        stdlib.free(arr.buf)
+
+    arr.buf = new_buf
+
 cpdef copy(IntArray src, IntArray dst):
     cdef int i
+
+    grow(dst, src.size)
 
     dst.size = 0
     for i in range(src.size):
