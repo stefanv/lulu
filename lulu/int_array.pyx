@@ -3,17 +3,20 @@
 cimport int_array
 cimport stdlib
 
+from int_array cimport HEAP_SIZE
+
 cdef class IntArray:
     """See int_array.pxd for members.
 
     """
     def __cinit__(self):
-        self.cap = 6
-        self.buf = <int*>stdlib.malloc(sizeof(int) * self.cap) # storage
+        self.cap = HEAP_SIZE
+        self.buf = self.heapbuf
         self.size = 0
 
     def __dealloc__(self):
-        stdlib.free(self.buf)
+        if self.buf != self.heapbuf:
+            stdlib.free(self.buf)
 
 cpdef inline append(IntArray arr, int x):
     cdef int* new_buf
@@ -27,7 +30,8 @@ cpdef inline append(IntArray arr, int x):
         for i in range(arr.size):
             new_buf[i] = arr.buf[i]
 
-        stdlib.free(arr.buf)
+        if arr.buf != arr.heapbuf:
+            stdlib.free(arr.buf)
         arr.buf = new_buf
 
     arr.buf[arr.size] = x

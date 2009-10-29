@@ -1,7 +1,12 @@
+cdef enum:
+     HEAP_SIZE = 10
+
 cdef class IntArray:
     cdef int* buf
     cdef int cap
     cdef int size
+
+    cdef int heapbuf[HEAP_SIZE]
 
 cpdef inline append(IntArray arr, int)
 cpdef int max(IntArray)
