@@ -21,7 +21,7 @@ cpdef set_value(ConnectedRegion cr, int v)
 cdef _minimum_shape(ConnectedRegion cr)
 cpdef ConnectedRegion copy(ConnectedRegion cr)
 cpdef int contains(ConnectedRegion cr, int r, int c)
-cpdef outside_boundary(ConnectedRegion cr)
+cdef _outside_boundary(ConnectedRegion cr, int* workspace)
 cpdef validate(ConnectedRegion cr)
 cdef int _boundary_maximum(IntArray boundary_x, IntArray boundary_y,
                            np.int_t* img,

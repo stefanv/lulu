@@ -96,7 +96,7 @@ cpdef set_start_row(ConnectedRegion cr, int start_row):
     """Set the first row where values occur.
 
     """
-    if start_row <= (cr._shape[0] - cr.rowptr.size + 1):
+    if start_row <= ((<int>cr._shape[0]) - cr.rowptr.size + 1):
         cr._start_row = start_row
     else:
         raise ValueError("Start row is too large for the current "
@@ -115,7 +115,7 @@ cpdef int contains(ConnectedRegion cr, int r, int c):
     """Does the connected region contain an element at (r, c)?
 
     """
-    cdef i
+    cdef int i, rows
     cdef int *colptr, *rowptr
     colptr = cr.colptr.buf
     rowptr = cr.rowptr.buf
@@ -127,7 +127,7 @@ cpdef int contains(ConnectedRegion cr, int r, int c):
     if r < 0 or r > rows - 2:
         return False
 
-    if c < 0 or c >= cr._shape[1]:
+    if c < 0 or c >= <int>cr._shape[1]:
         return False
 
     for i in range((rowptr[r + 1] - rowptr[r]) / 2):
@@ -137,7 +137,7 @@ cpdef int contains(ConnectedRegion cr, int r, int c):
 
     return False
 
-cpdef outside_boundary(ConnectedRegion cr):
+cdef _outside_boundary(ConnectedRegion cr, int* workspace):
     """Calculate the outside boundary using a scanline approach.
 
     Notes
@@ -163,11 +163,21 @@ cpdef outside_boundary(ConnectedRegion cr):
     As an optimisation, we evaluate only points next to inside
     boundary positions.
 
+    Parameters
+    ----------
+    cr : ConnectedRegion
+        Region for which the boundary must be calculated.
+    workspace : int*
+        BLock of memory that can hold ``3 * sizeof(int) * columns``
+        where columns is the largest number of columns spanned by cr
+        in a single row.
+
     """
     cdef int i # scanline row-position
     cdef int j # column position in scanline
     cdef int start, end, k, c
-    cdef IntArray x = IntArray(), y = IntArray()
+    cdef IntArray x = IntArray()
+    cdef IntArray y = IntArray()
 
     cdef int* rowptr = cr.rowptr.buf
     cdef int* colptr = cr.colptr.buf
@@ -177,11 +187,6 @@ cpdef outside_boundary(ConnectedRegion cr):
     cdef int col_min = iarr.min(cr.colptr)
     cdef int col_max = iarr.max(cr.colptr)
     cdef int columns = col_max - col_min
-
-    cdef int scanline_size = sizeof(int) * columns
-    cdef int* line_above = <int*>stdlib.malloc(scanline_size)
-    cdef int* line = <int*>stdlib.malloc(scanline_size)
-    cdef int* line_below = <int*>stdlib.malloc(scanline_size)
 
     # Optimised case nnz == 1
     if cr._nnz == 1:
@@ -194,6 +199,9 @@ cpdef outside_boundary(ConnectedRegion cr):
         return y, x
 
     # For all other cases, follow the scanline approach
+    cdef int* line_above = <int*><void*>workspace
+    cdef int* line = <int*><void*>line_above + columns
+    cdef int* line_below = <int*><void*>line + columns
 
     for j in range(columns):
         line[j] = 0
@@ -237,9 +245,15 @@ cpdef outside_boundary(ConnectedRegion cr):
                 iarr.append(x, columns + col_min)
                 iarr.append(y, i - 1 + cr._start_row)
 
-    stdlib.free(line_above)
-    stdlib.free(line)
-    stdlib.free(line_below)
+    return y, x
+
+def outside_boundary(ConnectedRegion cr):
+    cdef int* workspace = <int*>stdlib.malloc(sizeof(int) * 3 *
+                                              cr._shape[0])
+    cdef IntArray y, x
+    y, x = _outside_boundary(cr, workspace)
+
+    stdlib.free(workspace)
 
     return y, x
 

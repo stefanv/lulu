@@ -14,6 +14,7 @@ from lulu.connected_region cimport ConnectedRegion
 
 cimport lulu.connected_region_handler as crh
 cimport int_array as iarr
+cimport stdlib
 from int_array cimport IntArray
 
 def connected_regions(np.ndarray[np.int_t, ndim=2] img):
@@ -138,7 +139,8 @@ cdef _merge_all(dict merges, dict regions, int area, dict regions_by_area,
 
 cdef dict _identify_pulses_and_merges(set regions, int area, dict pulses,
                                       np.int_t* img_data, np.int_t* labels,
-                                      int rows, int cols, int mode=0):
+                                      int rows, int cols, int* workspace,
+                                      int mode=0):
     """Save pulses of this area, and return regions that need to be merged.
 
     Parameters
@@ -174,12 +176,14 @@ cdef dict _identify_pulses_and_merges(set regions, int area, dict pulses,
     if area not in pulses:
         pulses[area] = []
 
+    # Allocate memory for temporary arrays
+
     for cr in regions:
         idx0 = cr._start_row * cols + cr.colptr.buf[0]
         old_value = cr._value
         do_merge = False
 
-        y, x = crh.outside_boundary(cr)
+        y, x = crh._outside_boundary(cr, workspace)
 
         # Upper
         if mode == 0 or mode == 2:
@@ -275,6 +279,7 @@ def decompose(np.ndarray[np.int_t, ndim=2] img):
     cdef np.int_t* labels_data = <np.int_t*>labels.data
 
     cdef set merge_region_positions
+    cdef int* workspace = <int*>stdlib.malloc(sizeof(int) * max_cols * 3)
 
     cdef dict pulses = {}
 
@@ -306,7 +311,7 @@ def decompose(np.ndarray[np.int_t, ndim=2] img):
         merges = \
                _identify_pulses_and_merges(regions_by_area[area], area, pulses,
                                            img_data, labels_data,
-                                           max_rows, max_cols, 0)
+                                           max_rows, max_cols, workspace, 0)
 
         _merge_all(merges, regions, area, regions_by_area,
                    labels_data, max_rows, max_cols)
@@ -318,7 +323,7 @@ def decompose(np.ndarray[np.int_t, ndim=2] img):
         merges = \
                _identify_pulses_and_merges(regions_by_area[area], area, pulses,
                                            img_data, labels_data,
-                                           max_rows, max_cols, 1)
+                                           max_rows, max_cols, workspace, 1)
 
         _merge_all(merges, regions, area, regions_by_area,
                    labels_data, max_rows, max_cols)
@@ -326,6 +331,7 @@ def decompose(np.ndarray[np.int_t, ndim=2] img):
         del regions_by_area[area]
 
 
+    stdlib.free(workspace)
     print
     return pulses
 
