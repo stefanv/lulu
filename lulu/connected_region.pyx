@@ -1,3 +1,4 @@
+#cython: cdivision=True
 # -*- python -*-
 """
 Notes on file structure: we have a minimal data class,

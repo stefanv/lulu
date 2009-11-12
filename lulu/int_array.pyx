@@ -1,3 +1,4 @@
+#cython: cdivision=True
 # -*- python -*-
 
 cimport int_array

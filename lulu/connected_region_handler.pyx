@@ -1,3 +1,4 @@
+#cython: cdivision=True
 # -*- python -*-
 
 import numpy as np

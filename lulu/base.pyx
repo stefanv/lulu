@@ -1,3 +1,4 @@
+#cython: cdivision=True
 # -*- python -*-
 
 __all__ = ['connected_regions', 'decompose', 'reconstruct']
