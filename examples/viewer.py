@@ -97,6 +97,7 @@ class Viewer(BaseViewer):
                     Item('rectangularity_max'),
                     Item('lifetime_min', editor=no_endlabel_linear),
                     Item('lifetime_max', editor=no_endlabel_linear),
+                    Item('output_threshold', editor=no_endlabel_linear),
 
                     HGroup(Item('save_file', show_label=False),
                            Item('save_button', show_label=False)
@@ -167,6 +168,11 @@ class Viewer(BaseViewer):
                              low=int(self.lifetimes.min()),
                              high=int(self.lifetimes.max())))
 
+        self.add_trait('output_threshold',
+                       Range(value=0,
+                             low=0,
+                             high=255))
+
         self.result = self.image.copy()
 
     @on_trait_change('amplitude_threshold_min, amplitude_threshold_max,'
@@ -174,7 +180,8 @@ class Viewer(BaseViewer):
                      'area_threshold_min, area_threshold_max,'
                      'rectangularity_min, rectangularity_max,'
                      'absolute_sum, amplitudes_one, lifetime_min,'
-                     'lifetime_max, replace, subtract')
+                     'lifetime_max, replace, subtract,'
+                     'output_threshold')
     def reconstruct(self):
         self.result.fill(0)
         pulses = 0
@@ -233,7 +240,10 @@ class Viewer(BaseViewer):
         self.result[mask] = 0
 
         if self.subtract:
-            self.result = self.image - self.result
+            self.result = np.abs(self.image - self.result)
+
+        if self.output_threshold != 0:
+            self.result[self.result <= self.output_threshold] = 0
 
         self.pulses_used = pulses
 
