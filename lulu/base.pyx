@@ -112,18 +112,18 @@ cdef _merge_all(dict merges, dict regions, int area, dict regions_by_area,
                 cr_a, cr_b = cr_b, cr_a
                 a_label, b_label = b_label, a_label
 
-            # If we merge a larger region with a smaller region,
-            # we have to update the regions_by_area, since that
-            # area will still be visited.
+            # Regions have alreay been merged
             if b_label == a_label:
-                # Regions have alreay been merged
                 continue
 
             # Merge; update regions, labels
             # Image has already been updated in identify_pulses_and_merges
-
             del regions[b_label]
             crh._set_array(labels, rows, cols, cr_b, a_label)
+
+            # If we merge a larger region with a smaller region,
+            # we have to update the regions_by_area, since that
+            # area will still be visited.
 
             if cr_b._nnz >= area:
                 (<set>regions_by_area[cr_b._nnz]).remove(cr_b)
@@ -176,8 +176,6 @@ cdef dict _identify_pulses_and_merges(set regions, int area, dict pulses,
 
     if area not in pulses:
         pulses[area] = []
-
-    # Allocate memory for temporary arrays
 
     for cr in regions:
         idx0 = cr._start_row * cols + cr.colptr.buf[0]
