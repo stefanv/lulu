@@ -11,9 +11,9 @@ class TestConnectedComponents:
                            [3, 1, 1, 5, 3, 0]])
 
         self.labels = np.array([[0, 0, 1, 2, 3, 4],
-                                [0, 5, 5, 4, 6, 4],
+                                [0, 5, 5, 4, 2, 4],
                                 [0, 0, 5, 4, 4, 4],
-                                [7, 5, 5, 8, 9, 10]])
+                                [6, 5, 5, 7, 8, 9]])
 
     def test_basic(self):
         assert_array_equal(label(self.x), self.labels)
@@ -29,6 +29,13 @@ class TestConnectedComponents:
         for i in range(n):
             values = x[labels == i]
             assert np.all(values == values[0])
+
+    def test_diag(self):
+        x = np.array([[0, 0, 1],
+                      [0, 1, 0],
+                      [1, 0, 0]])
+        assert_array_equal(label(x),
+                           x)
 
 if __name__ == "__main__":
     run_module_suite()

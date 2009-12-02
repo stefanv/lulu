@@ -169,7 +169,7 @@ cdef _outside_boundary(ConnectedRegion cr, int* workspace):
     cr : ConnectedRegion
         Region for which the boundary must be calculated.
     workspace : int*
-        BLock of memory that can hold ``3 * sizeof(int) * columns``
+        BLock of memory that can hold ``3 * sizeof(int) * (columns + 2)``
         where columns is the largest number of columns spanned by cr
         in a single row.
 
@@ -189,68 +189,61 @@ cdef _outside_boundary(ConnectedRegion cr, int* workspace):
     cdef int col_max = iarr.max(cr.colptr)
     cdef int columns = col_max - col_min
 
-    # Optimised case nnz == 1
-    if cr._nnz == 1:
-        r = cr._start_row
-        c = colptr[0]
-
-        iarr.from_list(x, [c, c-1, c+1, c])
-        iarr.from_list(y, [r-1, r, r, r+1])
-
-        return y, x
-
-    # For all other cases, follow the scanline approach
     cdef int* line_above = <int*><void*>workspace
-    cdef int* line = <int*><void*>line_above + columns
-    cdef int* line_below = <int*><void*>line + columns
+    cdef int* line = <int*><void*>line_above + columns + 2
+    cdef int* line_below = <int*><void*>line + columns + 2
 
-    for j in range(columns):
+    for j in range(columns + 2):
         line[j] = 0
         line_below[j] = 0
+        line_above[j] = 0
 
-    for i in range(rows + 2):
+    for i in range(-1, rows + 2):
         # Update scanline and line above scanline
-        for j in range(columns):
-            line_above[j] = line[j]
-            line[j] = line_below[j]
+        if i >= 0:
+            for j in range(columns + 2):
+                line_above[j] = line[j]
+                line[j] = line_below[j]
 
         # When the scanline reaches the last line,
         # fill line_below with zeros
         if i <= rows:
-            for j in range(columns):
+            for j in range(columns + 2):
                 line_below[j] = 0
 
         # Update line below scanline
-        if i < rows:
-            for j in range((rowptr[i + 1] - rowptr[i]) / 2):
-                start = colptr[rowptr[i] + 2*j]
-                end = colptr[rowptr[i] + 2*j + 1]
+        if i + 1 < rows:
+            for j in range((rowptr[i + 2] - rowptr[i + 1]) / 2):
+                start = colptr[rowptr[i + 1] + 2*j]
+                end = colptr[rowptr[i + 1] + 2*j + 1]
 
                 for k in range(start - col_min, end - col_min):
-                    line_below[k] = 1
+                    line_below[k + 1] = 1
 
-        for j in range(columns):
-            # Test four neighbours for connections
-            if j == 0 and line[j] == 1:
-                iarr.append(x, -1 + col_min)
-                iarr.append(y, i - 1 + cr._start_row)
+        # Note that the columns run from -1...columns, but the
+        # array indices run from 0...columns+2
 
-            if (line[j] == 0) and \
-               (line_above[j] == 1 or line_below[j] == 1 or
-                ((j - 1) >= 0 and line[j - 1] == 1) or \
-                ((j + 1) < columns and line[j + 1] == 1)):
+        for j in range(-1, columns + 1):
+            # Test eight neighbours for connections
+            if (line[j + 1] == 0) and \
+               (line_above[j + 1] == 1 or \
+                line_below[j + 1] == 1 or \
+                (j >= 0 and
+                 (line_above[j] == 1 or
+                  line[j] or
+                  line_below[j] == 1)) or \
+                (j < columns and
+                 (line_above[j + 2] == 1 or
+                  line[j + 2] == 1 or
+                  line_below[j + 2] == 1))):
                 iarr.append(x, j + col_min)
-                iarr.append(y, i - 1 + cr._start_row)
-
-            if j == columns - 1 and line[j] == 1:
-                iarr.append(x, columns + col_min)
-                iarr.append(y, i - 1 + cr._start_row)
+                iarr.append(y, i + cr._start_row)
 
     return y, x
 
 def outside_boundary(ConnectedRegion cr):
     cdef int* workspace = <int*>stdlib.malloc(sizeof(int) * 3 *
-                                              cr._shape[0])
+                                              (cr._shape[1] + 2))
     cdef IntArray y, x
     y, x = _outside_boundary(cr, workspace)
 

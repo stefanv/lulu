@@ -6,6 +6,7 @@ import matplotlib.pyplot as plt
 
 from lulu import ConnectedRegion
 from lulu import connected_region_handler as crh
+from lulu import int_array
 
 c = ConnectedRegion(shape=(5,5),
                     value=1, start_row=1,
@@ -25,7 +26,7 @@ plt.yticks([])
 
 ii, jj = crh.outside_boundary(c)
 dense_outside = dense.copy()
-for i, j in zip(ii, jj):
+for i, j in zip(int_array.to_list(ii), int_array.to_list(jj)):
     dense_outside[i + 1, j + 1] = [0, 1, 0]
 
 plt.subplot(1, 2, 2)

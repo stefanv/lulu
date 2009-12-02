@@ -1,3 +1,4 @@
+# -*- python -*-
 #cython: cdivision=True
 
 import numpy as np
@@ -92,9 +93,19 @@ def label(np.ndarray[DTYPE_t, ndim=2] input):
         if data[i, 0] == data[i-1, 0]:
             join_trees(work_p, i*cols, (i-1)*cols)
 
+        if data[i, 0] == data[i-1, 1]:
+            join_trees(work_p, i*cols, (i-1)*cols + 1)
+
         for j in range(1, cols):
+            if data[i, j] == data[i-1, j-1]:
+                join_trees(work_p, i*cols + j, (i-1)*cols + j - 1)
+
             if data[i, j] == data[i-1, j]:
                 join_trees(work_p, i*cols + j, (i-1)*cols + j)
+
+            if j < cols - 1:
+                if data[i, j] == data[i - 1, j + 1]:
+                    join_trees(work_p, i*cols + j, (i-1)*cols + j + 1)
 
             if data[i, j] == data[i, j-1]:
                 join_trees(work_p, i*cols + j, i*cols + j - 1)

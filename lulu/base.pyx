@@ -278,7 +278,7 @@ def decompose(np.ndarray[np.int_t, ndim=2] img):
     cdef np.int_t* labels_data = <np.int_t*>labels.data
 
     cdef set merge_region_positions
-    cdef int* workspace = <int*>stdlib.malloc(sizeof(int) * max_cols * 3)
+    cdef int* workspace = <int*>stdlib.malloc(sizeof(int) * (max_cols + 2) * 3)
 
     cdef dict pulses = {}
 

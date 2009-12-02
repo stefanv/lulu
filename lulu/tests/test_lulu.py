@@ -55,8 +55,9 @@ class TestReconstruction:
 
         # Write assert this way so that we can see how many
         # pixels mismatch as a percent of the total nr of pixels
+        assert_array_equal(img_, img)
         assert_equal(np.sum(img_ != img) / float(np.prod(img.shape)) * 100,
-                     0)
+                     0, "Percentage mismatch =")
 
 if __name__ == "__main__":
     run_module_suite()

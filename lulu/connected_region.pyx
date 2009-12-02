@@ -19,7 +19,7 @@ from int_array cimport IntArray
 
 cdef class ConnectedRegion:
     """
-    A 4-connected region is stored in a modified Compressed
+    A 4 or 8-connected region is stored in a modified Compressed
     Sparse Row matrix format.
 
     Since the region is connected, we only have to store one value.
