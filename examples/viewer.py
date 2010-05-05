@@ -93,8 +93,8 @@ class Viewer(BaseViewer):
                     Item('area_threshold_max', editor=no_endlabel),
                     Item('volume_threshold_min', editor=no_endlabel),
                     Item('volume_threshold_max', editor=no_endlabel),
-                    Item('rectangularity_min'),
-                    Item('rectangularity_max'),
+                    Item('circularity_min'),
+                    Item('circularity_max'),
                     Item('lifetime_min', editor=no_endlabel_linear),
                     Item('lifetime_max', editor=no_endlabel_linear),
                     Item('output_threshold', editor=no_endlabel_linear),
@@ -154,10 +154,10 @@ class Viewer(BaseViewer):
         self.add_trait('volume_threshold_max',
                        Range(value=max_volume, low=1, high=max_volume))
 
-        self.add_trait('rectangularity_min',
-                       Range(value=0, low=0, high=1.0))
-        self.add_trait('rectangularity_max',
-                       Range(value=1, low=0, high=1.0))
+        self.add_trait('circularity_min',
+                       Range(value=0, low=0, high=1.5))
+        self.add_trait('circularity_max',
+                       Range(value=1.5, low=0, high=1.5))
 
         self.add_trait('lifetime_min',
                        Range(value=int(self.lifetimes.min()),
@@ -178,7 +178,7 @@ class Viewer(BaseViewer):
     @on_trait_change('amplitude_threshold_min, amplitude_threshold_max,'
                      'volume_threshold_min, volume_threshold_max,'
                      'area_threshold_min, area_threshold_max,'
-                     'rectangularity_min, rectangularity_max,'
+                     'circularity_min, circularity_max,'
                      'absolute_sum, amplitudes_one, lifetime_min,'
                      'lifetime_max, replace, subtract,'
                      'output_threshold')
@@ -204,22 +204,32 @@ class Viewer(BaseViewer):
                    volume > self.volume_threshold_max:
                     continue
 
-                # See:
-                #
-                # Measuring rectangularity by Paul L. Rosin
-                # Machine Vision and Applications, Vol 11, No 4, December 1999
-                # http://www.springerlink.com/content/xb9klcax8ytnwth1/
-                #
-                # for more information on computing rectangularity.
-                #
-                r0, c0, r1, c1 = crh.bounding_box(cr)
-                if c0 == c1 or r0 == r1:
-                    rectangularity = 1
-                else:
-                    rectangularity = area / float((c1 - c0 + 1) * (r1 - r0 + 1))
+                ## # See:
+                ## #
+                ## # Measuring rectangularity by Paul L. Rosin
+                ## # Machine Vision and Applications, Vol 11, No 4, December 1999
+                ## # http://www.springerlink.com/content/xb9klcax8ytnwth1/
+                ## #
+                ## # for more information on computing rectangularity.
+                ## #
+                ## r0, c0, r1, c1 = crh.bounding_box(cr)
+                ## if c0 == c1 or r0 == r1:
+                ##     rectangularity = 1
+                ## else:
+                ##     rectangularity = area / float((c1 - c0 + 1) * (r1 - r0 + 1))
 
-                if rectangularity < self.rectangularity_min or \
-                   rectangularity > self.rectangularity_max:
+                ## if rectangularity < self.rectangularity_min or \
+                ##    rectangularity > self.rectangularity_max:
+                ##     continue
+
+                r0, c0, r1, c1 = crh.bounding_box(cr)
+                if (c0 == c1) and (r0 == r1):
+                    circularity = 1
+                else:
+                    circularity = crh.nnz(cr) / (np.pi / 4 * max((r0 - r1)**2,
+                                                                 (c0 - c1)**2))
+                if circularity < self.circularity_min or \
+                   circularity > self.circularity_max:
                     continue
 
                 if self.absolute_sum:
