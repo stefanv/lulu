@@ -58,6 +58,14 @@ class BaseViewer(HasTraits):
         except IOError, e:
             message('Could not save file: %s' % str(e))
 
+        try:
+            f = open(self.save_file + '.txt', 'w')
+            f.write(str(self))
+            f.close()
+        except IOError:
+            message('Could not save file: %s' % str(e))
+
+
 
 class Viewer(BaseViewer):
     pulses = Dict
@@ -258,6 +266,27 @@ class Viewer(BaseViewer):
         self.pulses_used = pulses
 
         self.update_plot()
+
+    def __str__(self):
+        def pptrait(tname):
+            return ' '.join(tname.split('_')).capitalize()
+
+        def bracket(tname):
+            pname = pptrait(tname)
+            tmin = getattr(self, tname + '_min')
+            tmax = getattr(self, tname + '_max')
+            return ('%s: [%s, %s]' % (pname, tmin, tmax))
+
+        out = '\n'.join(bracket(t) for t in
+                        ('amplitude_threshold', 'area_threshold',
+                         'volume_threshold', 'circularity', 'lifetime'))
+
+        for tname in ('absolute_sum', 'amplitudes_one', 'replace', 'subtract',
+                      'output_threshold', 'pulses_used'):
+            out += ('\n%s: %s' % (pptrait(tname), getattr(self, tname)))
+
+        return out
+
 
 if __name__ == "__main__":
     image = load_image()
