@@ -172,7 +172,7 @@ cdef dict _identify_pulses_and_merges(set regions, int area, dict pulses,
     cdef IntArray y, x
     cdef int i, idx0, idx1
     cdef int xi, yi
-    cdef bool do_merge
+    cdef bint do_merge
 
     if area not in pulses:
         pulses[area] = []
@@ -242,13 +242,15 @@ cdef dict _identify_pulses_and_merges(set regions, int area, dict pulses,
 
     return merges
 
-def decompose(np.ndarray[np.int_t, ndim=2] img):
+def decompose(np.ndarray[np.int_t, ndim=2] img, quiet=False):
     """Decompose a two-dimensional signal into pulses.
 
     Parameters
     ----------
     img : 2-D ndarray of ints
         Input signal.
+    quiet : bool
+        Whether or not to print progress.
 
     Returns
     -------
@@ -291,17 +293,22 @@ def decompose(np.ndarray[np.int_t, ndim=2] img):
         except KeyError:
             regions_by_area[cr._nnz] = set([cr])
 
-    levels = max_cols * max_rows + 1
-    percentage_done = 0
+    if not quiet:
 
-    print "[> 0%% %s ]" % (" "*50),
-    sys.stdout.flush()
+        levels = max_cols * max_rows + 1
+        percentage_done = 0
+
+        print "[> 0%% %s ]" % (" "*50),
+        sys.stdout.flush()
+    
     for area in range(levels):
-        percentage = area*100/levels
-        if percentage != percentage_done:
-            print "\r[=%s> %d%%" % ("=" * (percentage/2), percentage),
-            sys.stdout.flush()
-            percentage_done = percentage
+
+        if not quiet:
+            percentage = area*100/levels
+            if percentage != percentage_done:
+                print "\r[=%s> %d%%" % ("=" * (percentage/2), percentage),
+                sys.stdout.flush()
+                percentage_done = percentage
 
         # Upper
         if not area in regions_by_area:
@@ -331,7 +338,7 @@ def decompose(np.ndarray[np.int_t, ndim=2] img):
 
 
     stdlib.free(workspace)
-    print
+    if not quiet: print
     return pulses
 
 def reconstruct(dict regions, tuple shape, int min_area=-1, int max_area=-1):
