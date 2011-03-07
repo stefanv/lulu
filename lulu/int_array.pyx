@@ -2,7 +2,7 @@
 # -*- python -*-
 
 cimport int_array
-cimport stdlib
+cimport libc.stdlib as stdlib
 
 from int_array cimport HEAP_SIZE
 

@@ -15,7 +15,7 @@ from lulu.connected_region cimport ConnectedRegion
 
 cimport lulu.connected_region_handler as crh
 cimport int_array as iarr
-cimport stdlib
+cimport libc.stdlib as stdlib
 from int_array cimport IntArray
 
 def connected_regions(np.ndarray[np.int_t, ndim=2] img):

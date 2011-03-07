@@ -7,7 +7,7 @@ import numpy as np
 # about the numpy module (this is stored in a file numpy.pxd which is
 # currently part of the Cython distribution).
 cimport numpy as np
-cimport stdlib
+cimport libc.stdlib as stdlib
 
 cimport lulu.connected_region_handler as crh
 cimport int_array as iarr
