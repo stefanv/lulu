@@ -1,3 +1,5 @@
+from __future__ import print_function
+
 from enthought.enable.api import Component, ComponentEditor
 from enthought.traits.api import HasTraits, Instance, Array, Int, Range, \
                                  on_trait_change, Dict, Bool, File, Button
@@ -289,8 +291,21 @@ class Viewer(BaseViewer):
 
 
 if __name__ == "__main__":
+    import sys
+    if len(sys.argv) >= 2 and '-UL' in sys.argv:
+        operator = 'UL'
+        sys.argv.remove('-UL')
+    else:
+        operator = 'LU'
+
     image = load_image()
-    pulses = lulu.decompose(image)
+
+    print("Decomposing using the %s operator." % operator)
+    if operator == 'LU':
+        print("Use the '-UL' flag to switch to UL.")
+
+    print()
+    pulses = lulu.decompose(image, operator=operator)
 
     viewer = Viewer(pulses=pulses, image=image)
     viewer.configure_traits()
