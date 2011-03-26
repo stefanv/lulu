@@ -47,7 +47,13 @@ if __name__ == "__main__":
     else:
         operator = 'LU'
 
-    image = (np.random.random((1, 100)) * 255).astype(int)
+    image = (np.sin(np.linspace(-np.pi, np.pi, 100))*100).astype(int)
+
+    mask = np.random.random((100,)) > 0.8
+    noise = np.random.random((100,))*100 - 50
+
+    image += (mask * noise)
+    image = image.reshape((1,-1))
 
     print("Decomposing using the %s operator." % operator)
     if operator == 'LU':
