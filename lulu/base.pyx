@@ -242,7 +242,7 @@ cdef dict _identify_pulses_and_merges(set regions, int area, dict pulses,
 
     return merges
 
-def decompose(np.ndarray[np.int_t, ndim=2] img, quiet=False):
+def decompose(np.ndarray[np.int_t, ndim=2] img, quiet=False, operator='LU'):
     """Decompose a two-dimensional signal into pulses.
 
     Parameters
@@ -251,6 +251,9 @@ def decompose(np.ndarray[np.int_t, ndim=2] img, quiet=False):
         Input signal.
     quiet : bool
         Whether or not to print progress.
+    operator : {'LU', 'UL'}
+        Order in which to apply the L and U operators.  By default, 'LU',
+        i.e. first U then L.
 
     Returns
     -------
@@ -273,6 +276,8 @@ def decompose(np.ndarray[np.int_t, ndim=2] img, quiet=False):
     cdef np.int_t* img_data = <np.int_t*>img.data
     cdef int max_rows = img.shape[0]
     cdef int max_cols = img.shape[1]
+
+    cdef bint order = (operator == 'LU')
 
     # labels (array): `img`, numbered according to connected region
     # regions (dict): ConnectedRegions, indexed by label value.
@@ -300,7 +305,7 @@ def decompose(np.ndarray[np.int_t, ndim=2] img, quiet=False):
 
         print "[> 0%% %s ]" % (" "*50),
         sys.stdout.flush()
-    
+
     for area in range(levels):
 
         if not quiet:
@@ -310,29 +315,56 @@ def decompose(np.ndarray[np.int_t, ndim=2] img, quiet=False):
                 sys.stdout.flush()
                 percentage_done = percentage
 
-        # Upper
-        if not area in regions_by_area:
-            continue
+        if (order == 1):
+            # Upper
+            if not area in regions_by_area:
+                continue
 
-        merges = \
-               _identify_pulses_and_merges(regions_by_area[area], area, pulses,
-                                           img_data, labels_data,
-                                           max_rows, max_cols, workspace, 0)
+            merges = \
+                   _identify_pulses_and_merges(regions_by_area[area], area,
+                                               pulses, img_data, labels_data,
+                                               max_rows, max_cols, workspace, 0)
 
-        _merge_all(merges, regions, area, regions_by_area,
-                   labels_data, max_rows, max_cols)
+            _merge_all(merges, regions, area, regions_by_area,
+                       labels_data, max_rows, max_cols)
 
-        # Lower
-        if not area in regions_by_area:
-            continue
+            # Lower
+            if not area in regions_by_area:
+                continue
 
-        merges = \
-               _identify_pulses_and_merges(regions_by_area[area], area, pulses,
-                                           img_data, labels_data,
-                                           max_rows, max_cols, workspace, 1)
+            merges = \
+                   _identify_pulses_and_merges(regions_by_area[area], area,
+                                               pulses, img_data, labels_data,
+                                               max_rows, max_cols, workspace, 1)
 
-        _merge_all(merges, regions, area, regions_by_area,
-                   labels_data, max_rows, max_cols)
+            _merge_all(merges, regions, area, regions_by_area,
+                       labels_data, max_rows, max_cols)
+
+        else:
+            # Lower
+            if not area in regions_by_area:
+                continue
+
+            merges = \
+                   _identify_pulses_and_merges(regions_by_area[area], area,
+                                               pulses, img_data, labels_data,
+                                               max_rows, max_cols, workspace, 1)
+
+            _merge_all(merges, regions, area, regions_by_area,
+                       labels_data, max_rows, max_cols)
+
+            # Upper
+            if not area in regions_by_area:
+                continue
+
+            merges = \
+                   _identify_pulses_and_merges(regions_by_area[area], area,
+                                               pulses, img_data, labels_data,
+                                               max_rows, max_cols, workspace, 0)
+
+            _merge_all(merges, regions, area, regions_by_area,
+                       labels_data, max_rows, max_cols)
+
 
         del regions_by_area[area]
 
