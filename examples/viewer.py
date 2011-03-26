@@ -165,9 +165,9 @@ class Viewer(BaseViewer):
                        Range(value=max_volume, low=1, high=max_volume))
 
         self.add_trait('circularity_min',
-                       Range(value=0, low=0, high=1.5))
+                       Range(value=0, low=0, high=1.0))
         self.add_trait('circularity_max',
-                       Range(value=1.5, low=0, high=1.5))
+                       Range(value=1.0, low=0, high=1.0))
 
         self.add_trait('lifetime_min',
                        Range(value=int(self.lifetimes.min()),
@@ -236,8 +236,11 @@ class Viewer(BaseViewer):
                 if (c0 == c1) and (r0 == r1):
                     circularity = 1
                 else:
-                    circularity = crh.nnz(cr) / (np.pi / 4 * max((r0 - r1)**2,
-                                                                 (c0 - c1)**2))
+                    max_dim = max(abs(r0 - r1), abs(c0 - c1))
+                    circularity = crh.nnz(cr) / \
+                                  (np.pi / 4 * (max_dim + 2)**2)
+                    # We add 2 to max_dim to allow for pixel overlap
+                    # with circumscribing circle
                 if circularity < self.circularity_min or \
                    circularity > self.circularity_max:
                     continue
