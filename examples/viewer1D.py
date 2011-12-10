@@ -3,8 +3,8 @@ from __future__ import print_function
 import numpy as np
 from viewer import Viewer
 
-from enthought.traits.api import Array
-from enthought.chaco.api import Plot, ArrayPlotData, HPlotContainer, gray
+from traits.api import Array
+from chaco.api import Plot, ArrayPlotData, HPlotContainer, gray
 
 import lulu
 
@@ -52,7 +52,7 @@ if __name__ == "__main__":
     mask = np.random.random((100,)) > 0.8
     noise = np.random.random((100,))*100 - 50
 
-    image += (mask * noise)
+    image += (mask * noise).astype(image.dtype)
     image = image.reshape((1,-1))
 
     print("Decomposing using the %s operator." % operator)

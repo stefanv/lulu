@@ -1,14 +1,13 @@
 from __future__ import print_function
 
-from enthought.enable.api import Component, ComponentEditor
-from enthought.traits.api import HasTraits, Instance, Array, Int, Range, \
-                                 on_trait_change, Dict, Bool, File, Button
-from enthought.traits.ui.api import Item, View, Group, HGroup, RangeEditor
-from enthought.chaco.api import Plot, ArrayPlotData, PlotLabel, \
-                                HPlotContainer, gray
+from enable.api import Component, ComponentEditor
+from traits.api import HasTraits, Instance, Array, Int, Range, \
+                       on_trait_change, Dict, Bool, File, Button
+from traitsui.api import Item, View, Group, HGroup, RangeEditor
+from chaco.api import Plot, ArrayPlotData, PlotLabel, \
+                      HPlotContainer, gray
 
-#from enthought.traits.ui.api import DefaultOverride
-from _traits_default_override import DefaultOverride
+from traitsui.api import DefaultOverride
 
 import numpy as np
 

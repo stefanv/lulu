@@ -10,12 +10,12 @@ from viewer import BaseViewer
 import lulu
 import lulu.connected_region_handler as crh
 
-from enthought.traits.api import HasTraits, Instance, Array, Int, Range, \
+from traits.api import HasTraits, Instance, Array, Int, Range, \
                                  on_trait_change, Dict, Bool, Button, \
                                  File
-from enthought.traits.ui.api import Item, View, Group, HGroup, RangeEditor
-from enthought.traits.ui.message import message
-from enthought.enable.api import Component, ComponentEditor
+from traitsui.api import Item, View, Group, HGroup, RangeEditor
+from traitsui.message import message
+from enable.api import Component, ComponentEditor
 
 import numpy as np
 
