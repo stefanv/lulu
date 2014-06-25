@@ -8,10 +8,10 @@ cdef class IntArray:
 
     cdef int heapbuf[HEAP_SIZE]
 
-cpdef inline append(IntArray arr, int)
+cpdef append(IntArray arr, int)
 cpdef int max(IntArray)
 cpdef int min(IntArray)
-cdef inline grow(IntArray arr, int)
+cdef grow(IntArray arr, int)
 cpdef copy(IntArray, IntArray)
 cpdef from_list(IntArray, list)
 cpdef int get(IntArray, int)
