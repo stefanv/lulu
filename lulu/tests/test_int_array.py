@@ -31,7 +31,7 @@ def test_copy():
 
 def test_from_list():
     x = IntArray()
-    iarr.from_list(x, range(15))
+    iarr.from_list(x, list(range(15)))
     assert iarr.get(x, 0) == 0
     assert iarr.get(x, 14) == 14
 

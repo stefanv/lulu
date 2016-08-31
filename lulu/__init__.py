@@ -18,13 +18,16 @@ except:
 def _register_pickling():
     crh = connected_region_handler
     # Register picking functions for connected region
-    import copy_reg
+    try:
+        import copy_reg as copyreg
+    except:
+        import copyreg
 
     def reduce_connected_region(obj):
         return ConnectedRegion, (crh.get_shape(obj), crh.get_value(obj),
                                  crh.get_start_row(obj), crh.get_rowptr(obj),
                                  crh.get_colptr(obj))
 
-    copy_reg.pickle(ConnectedRegion, reduce_connected_region)
+    copyreg.pickle(ConnectedRegion, reduce_connected_region)
 
 _register_pickling()

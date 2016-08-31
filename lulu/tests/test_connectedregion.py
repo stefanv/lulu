@@ -187,10 +187,7 @@ class TestConnectedRegion:
         b = ConnectedRegion(shape=(3, 4), value=1,
                             rowptr=[0, 2, 6, 10],
                             colptr=[1, 4, 1, 2, 3, 4, 1, 2, 3, 4])
-        print crh.todense(a)
-        print crh.todense(b)
         crh.merge(a, b)
-        print crh.todense(a)
         assert_array_equal(crh.todense(a),
                            [[0, 1, 1, 1],
                             [1, 1, 1, 1],
@@ -214,7 +211,11 @@ class TestConnectedRegion:
 
     def test_pickle(self):
         import pickle
-        from StringIO import StringIO
+        try:
+            from StringIO import StringIO
+        except:
+            from io import BytesIO as StringIO
+
         s = StringIO()
         pickle.dump(self.c, s)
         s.seek(0)
