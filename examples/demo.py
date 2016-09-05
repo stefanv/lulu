@@ -47,4 +47,4 @@ def load_image(fname=None):
     return np.array(img.convert('F')).astype(int)
 
 if __name__ == "__main__":
-    print __doc__
+    print(__doc__)

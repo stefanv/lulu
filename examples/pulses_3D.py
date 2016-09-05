@@ -1,7 +1,7 @@
 import sys
 sys.path.insert(0, '..')
 
-from enthought.mayavi import mlab
+from mayavi import mlab
 import numpy as np
 
 from demo import load_image
@@ -11,7 +11,7 @@ import lulu.connected_region_handler as crh
 
 img = load_image('chelsea_small.jpg')
 
-print "Decomposing a %s image." % str(img.shape)
+print("Decomposing a %s image." % str(img.shape))
 regions = lulu.decompose(img)
 
 value_maxes = []

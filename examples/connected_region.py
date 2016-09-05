@@ -13,7 +13,7 @@ c = ConnectedRegion(shape=(5,5),
                     rowptr=[0,4,6,10,14],
                     colptr=[2,3,4,5,0,5,0,1,2,5,0,2,3,5])
 
-print crh.todense(c)
+print(crh.todense(c))
 
 dense = np.zeros((7,7,3))
 dense[1:6, 1:6, 0] = crh.todense(c)

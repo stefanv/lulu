@@ -14,20 +14,20 @@ import lulu.connected_region_handler as crh
 
 img = load_image()
 
-print "Decomposing a %s matrix." % str(img.shape)
+print("Decomposing a %s matrix." % str(img.shape))
 
 tic = time.time()
 regions = lulu.decompose(img.copy())
 toc = time.time()
 
-print "Execution time: %.2fs" % (toc - tic)
+print("Execution time: %.2fs" % (toc - tic))
 
-print "-"*78
-print "Reconstructing image...",
+print("-"*78)
+print("Reconstructing image...", end=None)
 out, areas, area_count = lulu.reconstruct(regions, img.shape)
-print "done."
-print "Reconstructed from %d pulses." % sum(area_count)
-print "-"*78
+print("done.")
+print("Reconstructed from %d pulses." % sum(area_count))
+print("-"*78)
 
 plt.subplot(2, 2, 1)
 plt.imshow(img, interpolation='nearest', cmap=plt.cm.gray)
@@ -52,12 +52,12 @@ plt.xlabel('Pulse Area')
 plt.ylabel('Number of Pulses')
 plt.title('Histogram of Pulse Areas (up to area %d)' % (ind*3))
 
-print "-"*78
-print "Thresholded reconstruction...",
+print("-"*78)
+print("Thresholded reconstruction...", end=None)
 out, areas, area_count = \
      lulu.reconstruct(regions, img.shape, min_area=areas[ind])
-print "done."
-print "Reconstructed from %d pulses." % sum(area_count)
+print("done.")
+print("Reconstructed from %d pulses." % sum(area_count))
 
 for area in regions:
     if area < areas[ind]:

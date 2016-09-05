@@ -8,10 +8,10 @@ import lulu
 
 img = load_image()
 
-print "Decomposing a %s matrix." % str(img.shape)
+print("Decomposing a %s matrix." % str(img.shape))
 
 tic = time.time()
 regions = lulu.decompose(img)
 toc = time.time()
 
-print "Execution time: %.2fs" % (toc - tic)
+print("Execution time: %.2fs" % (toc - tic))

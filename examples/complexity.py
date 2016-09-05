@@ -11,7 +11,7 @@ import lulu
 sizes = []
 times = []
 for n in [16, 32, 64, 128, 256, 512, 1024]:
-    print "DPT of size (%s, %s)" % (n, n)
+    print("DPT of size (%s, %s)" % (n, n))
     x = np.random.randint(255, size=(n, n))
     tic = time.time()
     lulu.decompose(x)

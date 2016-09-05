@@ -25,13 +25,13 @@ for area in pulses:
                           np.abs(crh.get_value(cr)), 'add')
 
 def ICM(data, N, beta):
-    print "Performing ICM segmentation..."
+    print("Performing ICM segmentation...")
 
     # Initialise segmentation using kmeans
-    print "K-means initialisation..."
-    clusters, labels = kmeans2(np.ravel(data), N)
+    print("K-means initialisation...")
+    clusters, labels = kmeans2(np.ravel(data).astype(float), N)
 
-    print "Iterative segmentation..."
+    print("Iterative segmentation...")
     f = data.copy()
 
     def _minimise_cluster_distance(data, labels, N, beta):
@@ -87,7 +87,7 @@ def ICM(data, N, beta):
 
         labels = labels_
 
-    print "Clustering converged after %d steps." % i
+    print("Clustering converged after %d steps." % i)
 
     return labels.reshape(data.shape)
 

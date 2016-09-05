@@ -56,7 +56,7 @@ class BaseViewer(HasTraits):
     def _save_button_changed(self):
         try:
             np.save(self.save_file, self.result)
-        except IOError, e:
+        except IOError as e:
             message('Could not save file: %s' % str(e))
 
         try:
